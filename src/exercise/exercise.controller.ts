@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Patch,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ExerciseService } from './exercise.service';
 
@@ -19,7 +20,7 @@ export class ExerciseController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.exerciseService.findOne(id);
   }
 

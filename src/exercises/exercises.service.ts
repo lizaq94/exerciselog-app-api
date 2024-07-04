@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
-export class ExerciseService {
+export class ExercisesService {
   private exercises = [
     {
       id: 1,
@@ -42,7 +42,6 @@ export class ExerciseService {
   }
 
   findOne(id: number) {
-    console.log('Kamil id', id);
     const exercise = this.exercises.find((exercise) => {
       console.log(exercise.id);
       return exercise.id === id;

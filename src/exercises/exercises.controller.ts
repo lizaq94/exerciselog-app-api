@@ -4,15 +4,15 @@ import {
   Delete,
   Get,
   Param,
-  Post,
-  Patch,
   ParseIntPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { ExerciseService } from './exercise.service';
+import { ExercisesService } from './exercises.service';
 
-@Controller('exercise')
-export class ExerciseController {
-  constructor(private exerciseService: ExerciseService) {}
+@Controller('exercises')
+export class ExercisesController {
+  constructor(private exerciseService: ExercisesService) {}
 
   @Get()
   findAll() {

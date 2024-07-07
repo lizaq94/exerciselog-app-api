@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateExerciseDto } from './dto/create-exercise.dto';
+import { UpdateExerciseDto } from './dto/update-exercise.dto';
 
 @Injectable()
 export class ExercisesService {
@@ -6,37 +8,20 @@ export class ExercisesService {
     {
       id: 1,
       name: 'Bench Press',
+      order: 1,
+      type: 'Strength',
+      notes: 'Warm up properly before starting.',
       sets: [
-        { reps: 5, weight: 50 },
-        { reps: 5, weight: 55 },
-        { reps: 5, weight: 65 },
-        { reps: 5, weight: 70 },
+        {
+          id: 1,
+          repetitions: 10,
+          weight: 80,
+          order: 1,
+        },
       ],
-      time: 20233,
-    },
-    {
-      id: 2,
-      name: 'Bar Dip',
-      sets: [
-        { reps: 5, weight: 50 },
-        { reps: 5, weight: 55 },
-        { reps: 5, weight: 65 },
-        { reps: 5, weight: 70 },
-      ],
-      time: 20333,
-    },
-    {
-      id: 3,
-      name: 'Board Press',
-      sets: [
-        { reps: 5, weight: 50 },
-        { reps: 5, weight: 55 },
-        { reps: 5, weight: 65 },
-        { reps: 5, weight: 70 },
-      ],
-      time: 20232,
     },
   ];
+
   findAll() {
     return this.exercises;
   }
@@ -52,11 +37,11 @@ export class ExercisesService {
     return exercise;
   }
 
-  create(creatExerciseDto: any) {
+  create(creatExerciseDto: CreateExerciseDto) {
     return creatExerciseDto;
   }
 
-  update(id: number, updateExerciseDto: any) {
+  update(id: number, updateExerciseDto: UpdateExerciseDto) {
     return id;
   }
 

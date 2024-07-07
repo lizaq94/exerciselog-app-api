@@ -6,10 +6,8 @@ import {
   Param,
   ParseIntPipe,
   Patch,
-  Post,
   ValidationPipe,
 } from '@nestjs/common';
-import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { ExercisesService } from './exercises.service';
 
@@ -20,11 +18,6 @@ export class ExercisesController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.exerciseService.findOne(id);
-  }
-
-  @Post()
-  create(@Body(ValidationPipe) creatExerciseDto: CreateExerciseDto) {
-    return this.exerciseService.create(creatExerciseDto);
   }
 
   @Patch(':id')

@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 
 @Injectable()
@@ -22,10 +21,6 @@ export class ExercisesService {
     },
   ];
 
-  findAll() {
-    return this.exercises;
-  }
-
   findOne(id: number) {
     const exercise = this.exercises.find((exercise) => {
       console.log(exercise.id);
@@ -35,10 +30,6 @@ export class ExercisesService {
     if (!exercise) throw new NotFoundException('Exercise not found');
 
     return exercise;
-  }
-
-  create(creatExerciseDto: CreateExerciseDto) {
-    return creatExerciseDto;
   }
 
   update(id: number, updateExerciseDto: UpdateExerciseDto) {

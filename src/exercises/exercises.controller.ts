@@ -6,8 +6,10 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   ValidationPipe,
 } from '@nestjs/common';
+import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { ExercisesService } from './exercises.service';
 
@@ -31,5 +33,15 @@ export class ExercisesController {
   @Delete(':id')
   delete(@Param('id') id: number) {
     return this.exerciseService.delete(id);
+  }
+
+  @Get(':id/sets')
+  getSets(@Param('id') id: number) {
+    return ['sets', id];
+  }
+
+  @Post(':id/sets')
+  addSet(@Param('id') id: number, @Body() createSetsDto: CreateSetDto) {
+    return `create set to exercise ${id}`;
   }
 }

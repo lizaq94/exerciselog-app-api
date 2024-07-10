@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { UpdateSetDto } from './dto/update-set.dto';
 
 @Injectable()
 export class SetsService {
@@ -33,7 +34,7 @@ export class SetsService {
     return sets;
   }
 
-  update(id: number, updateSetsDto: any) {
+  update(id: number, updateSetsDto: UpdateSetDto) {
     return id;
   }
 

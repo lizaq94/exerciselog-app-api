@@ -8,6 +8,7 @@ import {
   Patch,
   ValidationPipe,
 } from '@nestjs/common';
+import { UpdateSetDto } from './dto/update-set.dto';
 import { SetsService } from './sets.service';
 
 @Controller('sets')
@@ -20,7 +21,10 @@ export class SetsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: number, @Body(ValidationPipe) updateSetsDto: any) {
+  update(
+    @Param('id') id: number,
+    @Body(ValidationPipe) updateSetsDto: UpdateSetDto,
+  ) {
     return this.setsService.update(id, updateSetsDto);
   }
 

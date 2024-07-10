@@ -1,4 +1,5 @@
 import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { SetDto } from './set.dto';
 
 export class ExerciseDto {
   id: number;
@@ -16,10 +17,5 @@ export class ExerciseDto {
   @IsString()
   notes: string;
 
-  sets: {
-    id: number;
-    repetitions: number;
-    weight: number;
-    order: number;
-  }[];
+  sets: SetDto[];
 }

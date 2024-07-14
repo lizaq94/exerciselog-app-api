@@ -36,7 +36,7 @@ export class ExercisesController {
   }
 
   @Get(':id/sets')
-  getSets(@Param('id') id: number) {
+  findAllSets(@Param('id') id: number) {
     return ['sets', id];
   }
 

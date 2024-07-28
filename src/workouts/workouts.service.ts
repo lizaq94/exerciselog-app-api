@@ -1,70 +1,45 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class WorkoutsService {
-  private workouts = [
-    {
-      id: 1,
-      user_id: 123,
-      name: 'Full Body Workout',
-      date: '2024-07-02',
-      notes: 'Focus on form and control.',
-      duration: 60,
-      exercises: [
-        {
-          id: 1,
-          name: 'Bench Press',
-          order: 1,
-          type: 'Strength',
-          notes: 'Warm up properly before starting.',
-          sets: [
-            {
-              id: 1,
-              repetitions: 10,
-              weight: 80,
-              order: 1,
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  public findAll() {
-    return this.workouts;
+  public async findAll() {
+    return this.databaseService.workout.findMany();
   }
 
-  public findOne(id: number) {
-    const workout = this.workouts.find((workout) => workout.id === id);
+  public async findOne(id: string) {
+    const workout = await this.databaseService.workout.findUnique({
+      where: { id },
+    });
 
     if (!workout) throw new NotFoundException('Workout not found');
 
     return workout;
   }
 
-  public create(createWorkoutDto: any) {
-    this.workouts.push(createWorkoutDto);
-  }
-
-  public update(id: number, updateWorkoutDto: any) {
-    this.workouts = this.workouts.map((workout: any) => {
-      if (workout.id === id) {
-        return {
-          ...workout,
-          ...updateWorkoutDto,
-        };
-      }
+  public async create(createWorkoutDto: Prisma.WorkoutCreateInput) {
+    return this.databaseService.workout.create({
+      data: createWorkoutDto,
     });
-    return this.findOne(id);
   }
 
-  public delete(id: number) {
+  public async update(id: string, updateWorkoutDto: Prisma.WorkoutUpdateInput) {
+    return this.databaseService.workout.update({
+      where: { id },
+      data: updateWorkoutDto,
+    });
+  }
+
+  public async delete(id: string) {
     const removeWorkout = this.findOne(id);
 
     if (!removeWorkout)
       throw new NotFoundException('Workout not found or has been deleted');
 
-    this.workouts = this.workouts.filter((workout) => workout.id !== id);
+    await this.databaseService.workout.delete({ where: { id } });
 
     return removeWorkout;
   }

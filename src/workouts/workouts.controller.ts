@@ -8,32 +8,39 @@ import {
   Post,
 } from '@nestjs/common';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
+import { WorkoutsService } from './workouts.service';
+import { Prisma } from '@prisma/client';
 
 @Controller('workouts')
 export class WorkoutsController {
+  constructor(private readonly workoutService: WorkoutsService) {}
+
   @Get()
   findAll() {
-    return 'all workouts';
+    return this.workoutService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return `workout of id: ${id}`;
+  findOne(@Param('id') id: string) {
+    return this.workoutService.findOne(id);
   }
 
   @Post()
-  create(@Body() createWorkoutsDto: any) {
-    return `create workout`;
+  create(@Body() createWorkoutsDto: Prisma.WorkoutCreateInput) {
+    return this.workoutService.create(createWorkoutsDto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateWorkoutsDto: any) {
-    return `update workout od id: ${id}`;
+  update(
+    @Param('id') id: string,
+    @Body() updateWorkoutsDto: Prisma.WorkoutUpdateInput,
+  ) {
+    return this.workoutService.update(id, updateWorkoutsDto);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number) {
-    return `delete workout od id: ${id}`;
+  delete(@Param('id') id: string) {
+    return this.workoutService.delete(id);
   }
 
   @Get(':id/exercises')

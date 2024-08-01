@@ -1,5 +1,12 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { SetDto } from './set.dto';
+import { Type } from 'class-transformer';
 
 export class ExerciseDto {
   id: number;
@@ -17,5 +24,8 @@ export class ExerciseDto {
   @IsString()
   notes: string;
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SetDto)
   sets: SetDto[];
 }

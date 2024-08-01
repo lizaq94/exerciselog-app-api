@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { Prisma } from '@prisma/client';
+import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 
 @Injectable()
 export class WorkoutsService {
@@ -20,13 +22,13 @@ export class WorkoutsService {
     return workout;
   }
 
-  public async create(createWorkoutDto: Prisma.WorkoutCreateInput) {
+  public async create(createWorkoutDto: CreateWorkoutDto) {
     return this.databaseService.workout.create({
       data: createWorkoutDto,
     });
   }
 
-  public async update(id: string, updateWorkoutDto: Prisma.WorkoutUpdateInput) {
+  public async update(id: string, updateWorkoutDto: UpdateWorkoutDto) {
     return this.databaseService.workout.update({
       where: { id },
       data: updateWorkoutDto,
@@ -42,5 +44,26 @@ export class WorkoutsService {
     await this.databaseService.workout.delete({ where: { id } });
 
     return removeWorkout;
+  }
+
+  public async findAllExercise(id: string) {
+    const exercises = await this.databaseService.exercise.findMany({
+      where: { workoutId: id },
+    });
+
+    if (!exercises.length) throw new NotFoundException('No exercises');
+
+    return exercises;
+  }
+
+  public async addExercise(id: string, exerciseDto: CreateExerciseDto) {
+    return this.databaseService.exercise.create({
+      data: {
+        ...exerciseDto,
+        workout: {
+          connect: { id },
+        },
+      },
+    });
   }
 }

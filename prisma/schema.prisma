@@ -34,9 +34,9 @@ model Exercise {
 }
 
 model Set {
-  id         String   @id @default(uuid())
-  exercise   Exercise @relation(fields: [exerciseId], references: [id])
-  exerciseId String
+  id         String    @id @default(uuid())
+  exercise   Exercise? @relation(fields: [exerciseId], references: [id])
+  exerciseId String?
   repetition Int
   weight     Float
   order      Int

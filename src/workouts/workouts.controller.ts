@@ -6,10 +6,12 @@ import {
   Param,
   Patch,
   Post,
+  ValidationPipe,
 } from '@nestjs/common';
-import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { WorkoutsService } from './workouts.service';
-import { Prisma } from '@prisma/client';
+import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 
 @Controller('workouts')
 export class WorkoutsController {
@@ -26,14 +28,14 @@ export class WorkoutsController {
   }
 
   @Post()
-  create(@Body() createWorkoutsDto: Prisma.WorkoutCreateInput) {
+  create(@Body(ValidationPipe) createWorkoutsDto: CreateWorkoutDto) {
     return this.workoutService.create(createWorkoutsDto);
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateWorkoutsDto: Prisma.WorkoutUpdateInput,
+    @Body(ValidationPipe) updateWorkoutsDto: UpdateWorkoutDto,
   ) {
     return this.workoutService.update(id, updateWorkoutsDto);
   }
@@ -44,13 +46,15 @@ export class WorkoutsController {
   }
 
   @Get(':id/exercises')
-  findAllExercise(@Param('id') id: number) {
-    return `findAll exercise for workout ${id}`;
+  findAllExercise(@Param('id') id: string) {
+    return this.workoutService.findAllExercise(id);
   }
 
   @Post(':id/exercises')
   addExercise(
-    @Param('id') id: number,
-    @Body() createExerciseDto: CreateExerciseDto,
-  ) {}
+    @Param('id') id: string,
+    @Body(ValidationPipe) createExerciseDto: CreateExerciseDto,
+  ) {
+    return this.workoutService.addExercise(id, createExerciseDto);
+  }
 }

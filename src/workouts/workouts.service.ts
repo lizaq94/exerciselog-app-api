@@ -1,20 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { UpdateWorkoutDto } from './dto/update-workout.dto';
-import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 
 @Injectable()
 export class WorkoutsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   public async findAll() {
-    return this.databaseService.workout.findMany();
+    return this.databaseService.workout.findMany({
+      include: { exercises: true },
+    });
   }
 
   public async findOne(id: string) {
     const workout = await this.databaseService.workout.findUnique({
       where: { id },
+      include: { exercises: true },
     });
 
     if (!workout) throw new NotFoundException('Workout not found');

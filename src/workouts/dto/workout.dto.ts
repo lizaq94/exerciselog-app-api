@@ -1,10 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsNumber, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { ExerciseDto } from '../../common/dto/exercise.dto';
 
 export class WorkoutDto {
-  id: number;
+  @IsUUID()
+  id: string;
 
   @ApiProperty()
   @IsString()

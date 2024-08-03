@@ -9,11 +9,13 @@ import {
   Post,
   ValidationPipe,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { ExercisesService } from './exercises.service';
 
 @Controller('exercises')
+@ApiTags('exercises')
 export class ExercisesController {
   constructor(private exerciseService: ExercisesService) {}
 

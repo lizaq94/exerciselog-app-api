@@ -8,10 +8,12 @@ import {
   Patch,
   ValidationPipe,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { UpdateSetDto } from './dto/update-set.dto';
 import { SetsService } from './sets.service';
 
 @Controller('sets')
+@ApiTags('sets')
 export class SetsController {
   constructor(private setsService: SetsService) {}
 

@@ -8,12 +8,14 @@ import {
   Post,
   ValidationPipe,
 } from '@nestjs/common';
-import { WorkoutsService } from './workouts.service';
-import { UpdateWorkoutDto } from './dto/update-workout.dto';
-import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { ApiTags } from '@nestjs/swagger';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
+import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { WorkoutsService } from './workouts.service';
 
 @Controller('workouts')
+@ApiTags('workouts')
 export class WorkoutsController {
   constructor(private readonly workoutService: WorkoutsService) {}
 

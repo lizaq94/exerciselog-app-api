@@ -1,30 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
+import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 
 @Injectable()
 export class ExercisesService {
-  private exercises = [
-    {
-      id: 1,
-      name: 'Bench Press',
-      order: 1,
-      type: 'Strength',
-      notes: 'Warm up properly before starting.',
-      sets: [
-        {
-          id: 1,
-          repetitions: 10,
-          weight: 80,
-          order: 1,
-        },
-      ],
-    },
-  ];
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  findOne(id: number) {
-    const exercise = this.exercises.find((exercise) => {
-      console.log(exercise.id);
-      return exercise.id === id;
+  async findOne(id: string) {
+    const exercise = await this.databaseService.exercise.findUnique({
+      where: { id },
+      include: { sets: true },
     });
 
     if (!exercise) throw new NotFoundException('Exercise not found');
@@ -32,11 +18,46 @@ export class ExercisesService {
     return exercise;
   }
 
-  update(id: number, updateExerciseDto: UpdateExerciseDto) {
-    return id;
+  async update(id: string, updateExerciseDto: UpdateExerciseDto) {
+    const isExerciseExist = await this.databaseService.exercise.findUnique({
+      where: { id },
+    });
+
+    if (!isExerciseExist) throw new NotFoundException('Exercise not found');
+
+    return this.databaseService.exercise.update({
+      where: { id },
+      data: updateExerciseDto,
+    });
   }
 
-  delete(id: number) {
-    return id;
+  async delete(id: string) {
+    const isExerciseExist = this.findOne(id);
+
+    if (!isExerciseExist)
+      throw new NotFoundException('Exercise not found or has been deleted');
+
+    return this.databaseService.exercise.delete({ where: { id } });
+  }
+
+  async findAllSets(exerciseId: string) {
+    const sets = await this.databaseService.set.findMany({
+      where: { exerciseId },
+    });
+
+    if (!sets.length) throw new NotFoundException('No sets');
+
+    return sets;
+  }
+
+  public async addSet(exerciseId: string, createSetDto: CreateSetDto) {
+    return this.databaseService.set.create({
+      data: {
+        ...createSetDto,
+        exercise: {
+          connect: { id: exerciseId },
+        },
+      },
+    });
   }
 }

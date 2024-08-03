@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   ValidationPipe,
@@ -20,30 +19,30 @@ export class ExercisesController {
   constructor(private exerciseService: ExercisesService) {}
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.exerciseService.findOne(id);
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body(ValidationPipe) updateExerciseDto: UpdateExerciseDto,
   ) {
     return this.exerciseService.update(id, updateExerciseDto);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number) {
+  delete(@Param('id') id: string) {
     return this.exerciseService.delete(id);
   }
 
   @Get(':id/sets')
-  findAllSets(@Param('id') id: number) {
-    return ['sets', id];
+  findAllSets(@Param('id') id: string) {
+    return this.exerciseService.findAllSets(id);
   }
 
   @Post(':id/sets')
-  addSet(@Param('id') id: number, @Body() createSetsDto: CreateSetDto) {
-    return `create set to exercise ${id}`;
+  addSet(@Param('id') id: string, @Body() createSetDto: CreateSetDto) {
+    return this.exerciseService.addSet(id, createSetDto);
   }
 }

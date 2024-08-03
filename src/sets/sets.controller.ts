@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   ValidationPipe,
 } from '@nestjs/common';
@@ -18,20 +17,20 @@ export class SetsController {
   constructor(private setsService: SetsService) {}
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.setsService.findOne(id);
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body(ValidationPipe) updateSetsDto: UpdateSetDto,
   ) {
     return this.setsService.update(id, updateSetsDto);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number) {
+  delete(@Param('id') id: string) {
     return this.setsService.delete(id);
   }
 }

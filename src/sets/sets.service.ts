@@ -1,44 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
 import { UpdateSetDto } from './dto/update-set.dto';
 
 @Injectable()
 export class SetsService {
-  public sets = [
-    {
-      id: 1,
-      repetitions: 10,
-      weight: 80,
-      order: 1,
-    },
-    {
-      id: 1,
-      repetitions: 10,
-      weight: 80,
-      order: 1,
-    },
-    {
-      id: 1,
-      repetitions: 10,
-      weight: 80,
-      order: 1,
-    },
-  ];
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  findOne(id: number) {
-    const sets = this.sets.find((sets) => {
-      return sets.id === id;
+  async findOne(id: string) {
+    const set = await this.databaseService.set.findUnique({
+      where: { id },
     });
 
-    if (!sets) throw new NotFoundException('Sets not found');
+    if (!set) throw new NotFoundException('Set not found');
 
-    return sets;
+    return set;
   }
 
-  update(id: number, updateSetsDto: UpdateSetDto) {
-    return id;
+  async update(id: string, updateSetsDto: UpdateSetDto) {
+    const isSetExist = await this.databaseService.set.findUnique({
+      where: { id },
+    });
+
+    if (!isSetExist) throw new NotFoundException('Set not found');
+
+    return this.databaseService.set.update({
+      where: { id },
+      data: updateSetsDto,
+    });
   }
 
-  delete(id: number) {
-    return id;
+  delete(id: string) {
+    const isSetExist = this.findOne(id);
+
+    if (!isSetExist)
+      throw new NotFoundException('Set not found or has been deleted');
+
+    return this.databaseService.set.delete({ where: { id } });
   }
 }

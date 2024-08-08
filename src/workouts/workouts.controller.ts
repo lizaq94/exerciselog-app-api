@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
-import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { UpdateWorkoutDto } from './dto/update-workout.dto';
 import { WorkoutsService } from './workouts.service';
 
@@ -19,19 +18,9 @@ import { WorkoutsService } from './workouts.service';
 export class WorkoutsController {
   constructor(private readonly workoutService: WorkoutsService) {}
 
-  @Get()
-  findAll() {
-    return this.workoutService.findAll();
-  }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.workoutService.findOne(id);
-  }
-
-  @Post()
-  create(@Body(ValidationPipe) createWorkoutsDto: CreateWorkoutDto) {
-    return this.workoutService.create(createWorkoutsDto);
   }
 
   @Patch(':id')

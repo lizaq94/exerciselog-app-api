@@ -8,8 +8,9 @@ import { UpdateWorkoutDto } from './dto/update-workout.dto';
 export class WorkoutsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  public async findAll() {
+  public async findAll(userId: string) {
     return this.databaseService.workout.findMany({
+      where: { userId },
       include: { exercises: true },
     });
   }
@@ -25,9 +26,14 @@ export class WorkoutsService {
     return workout;
   }
 
-  public async create(createWorkoutDto: CreateWorkoutDto) {
+  public async create(userId: string, createWorkoutDto: CreateWorkoutDto) {
     return this.databaseService.workout.create({
-      data: createWorkoutDto,
+      data: {
+        ...createWorkoutDto,
+        user: {
+          connect: { id: userId },
+        },
+      },
     });
   }
 

@@ -1,10 +1,28 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { UpdateSetDto } from './dto/update-set.dto';
+import { CreateSetDto } from './dto/create-set.dto';
 
 @Injectable()
 export class SetsService {
   constructor(private readonly databaseService: DatabaseService) {}
+
+  async findAll(exerciseId: string) {
+    return this.databaseService.set.findMany({
+      where: { exerciseId },
+    });
+  }
+
+  public async create(exerciseId: string, createSetDto: CreateSetDto) {
+    return this.databaseService.set.create({
+      data: {
+        ...createSetDto,
+        exercise: {
+          connect: { id: exerciseId },
+        },
+      },
+    });
+  }
 
   async findOne(id: string) {
     const set = await this.databaseService.set.findUnique({

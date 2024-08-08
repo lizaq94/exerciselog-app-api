@@ -3,10 +3,14 @@ import { DatabaseService } from '../database/database.service';
 import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
+import { SetsService } from '../sets/sets.service';
 
 @Injectable()
 export class ExercisesService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly setsService: SetsService,
+  ) {}
 
   public async findAll(workoutId: string) {
     return this.databaseService.exercise.findMany({
@@ -58,24 +62,11 @@ export class ExercisesService {
     return this.databaseService.exercise.delete({ where: { id } });
   }
 
-  async findAllSets(exerciseId: string) {
-    const sets = await this.databaseService.set.findMany({
-      where: { exerciseId },
-    });
-
-    if (!sets.length) throw new NotFoundException('No sets');
-
-    return sets;
+  async findAllSets(id: string) {
+    return this.setsService.findAll(id);
   }
 
-  public async addSet(exerciseId: string, createSetDto: CreateSetDto) {
-    return this.databaseService.set.create({
-      data: {
-        ...createSetDto,
-        exercise: {
-          connect: { id: exerciseId },
-        },
-      },
-    });
+  public async addSet(id: string, createSetDto: CreateSetDto) {
+    return this.setsService.create(id, createSetDto);
   }
 }

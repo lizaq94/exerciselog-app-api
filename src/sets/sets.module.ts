@@ -7,5 +7,6 @@ import { SetsService } from './sets.service';
   imports: [DatabaseModule],
   controllers: [SetsController],
   providers: [SetsService],
+  exports: [SetsService],
 })
 export class SetsModule {}

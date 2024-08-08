@@ -1,5 +1,5 @@
 import { OmitType } from '@nestjs/swagger';
-import { WorkoutDto } from './workout.dto';
+import { WorkoutDto } from '../../common/dto/workout.dto';
 
 export class CreateWorkoutDto extends OmitType(WorkoutDto, [
   'id',

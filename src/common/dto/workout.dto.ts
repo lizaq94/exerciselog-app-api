@@ -7,7 +7,7 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator';
-import { ExerciseDto } from '../../common/dto/exercise.dto';
+import { ExerciseDto } from './exercise.dto';
 
 export class WorkoutDto {
   @IsUUID()

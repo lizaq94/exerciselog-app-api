@@ -3,10 +3,14 @@ import { DatabaseService } from '../database/database.service';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { ExercisesService } from '../exercises/exercises.service';
 
 @Injectable()
 export class WorkoutsService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly exercisesService: ExercisesService,
+  ) {}
 
   public async findAll(userId: string) {
     return this.databaseService.workout.findMany({
@@ -56,23 +60,10 @@ export class WorkoutsService {
   }
 
   public async findAllExercise(id: string) {
-    const exercises = await this.databaseService.exercise.findMany({
-      where: { workoutId: id },
-    });
-
-    if (!exercises.length) throw new NotFoundException('No exercises');
-
-    return exercises;
+    return this.exercisesService.findAll(id);
   }
 
   public async addExercise(id: string, exerciseDto: CreateExerciseDto) {
-    return this.databaseService.exercise.create({
-      data: {
-        ...exerciseDto,
-        workout: {
-          connect: { id },
-        },
-      },
-    });
+    return this.exercisesService.create(id, exerciseDto);
   }
 }

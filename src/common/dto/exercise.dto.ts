@@ -35,5 +35,5 @@ export class ExerciseDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SetDto)
-  sets: SetDto[];
+  sets?: SetDto[];
 }

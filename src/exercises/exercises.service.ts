@@ -4,6 +4,7 @@ import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { SetsService } from '../sets/sets.service';
+import { ExerciseDto } from '../common/dto/exercise.dto';
 
 @Injectable()
 export class ExercisesService {
@@ -12,13 +13,16 @@ export class ExercisesService {
     private readonly setsService: SetsService,
   ) {}
 
-  public async findAll(workoutId: string) {
+  public async findAll(workoutId: string): Promise<ExerciseDto[]> {
     return this.databaseService.exercise.findMany({
       where: { workoutId },
     });
   }
 
-  public async create(workoutId: string, exerciseDto: CreateExerciseDto) {
+  public async create(
+    workoutId: string,
+    exerciseDto: CreateExerciseDto,
+  ): Promise<ExerciseDto> {
     return this.databaseService.exercise.create({
       data: {
         ...exerciseDto,
@@ -29,7 +33,7 @@ export class ExercisesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<ExerciseDto> {
     const exercise = await this.databaseService.exercise.findUnique({
       where: { id },
       include: { sets: true },
@@ -40,7 +44,10 @@ export class ExercisesService {
     return exercise;
   }
 
-  async update(id: string, updateExerciseDto: UpdateExerciseDto) {
+  async update(
+    id: string,
+    updateExerciseDto: UpdateExerciseDto,
+  ): Promise<ExerciseDto> {
     const isExerciseExist = await this.databaseService.exercise.findUnique({
       where: { id },
     });
@@ -53,7 +60,7 @@ export class ExercisesService {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<ExerciseDto> {
     const isExerciseExist = this.findOne(id);
 
     if (!isExerciseExist)
@@ -63,10 +70,12 @@ export class ExercisesService {
   }
 
   async findAllSets(id: string) {
+    await this.findOne(id);
     return this.setsService.findAll(id);
   }
 
   public async addSet(id: string, createSetDto: CreateSetDto) {
+    await this.findOne(id);
     return this.setsService.create(id, createSetDto);
   }
 }

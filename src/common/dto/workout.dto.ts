@@ -28,5 +28,5 @@ export class WorkoutDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ExerciseDto)
-  exercises: ExerciseDto[];
+  exercises?: ExerciseDto[];
 }

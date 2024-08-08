@@ -5,6 +5,7 @@ import { encryptPassword } from '../utils/bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
@@ -13,7 +14,7 @@ export class UsersService {
     private readonly workoutService: WorkoutsService,
   ) {}
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<UserDto> {
     const user = await this.databaseService.user.findUnique({ where: { id } });
 
     if (!user) throw new NotFoundException('User not found');
@@ -21,7 +22,7 @@ export class UsersService {
     return user;
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<UserDto> {
     const password = await encryptPassword(createUserDto.password);
 
     return this.databaseService.user.create({
@@ -32,7 +33,7 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const userToUpdate = await this.databaseService.user.findUnique({
       where: { id },
     });
@@ -57,10 +58,12 @@ export class UsersService {
   }
 
   async findAllWorkouts(id: string) {
+    await this.findOne(id);
     return this.workoutService.findAll(id);
   }
 
   async addWorkout(id: string, createWorkoutDto: CreateWorkoutDto) {
+    await this.findOne(id);
     return this.workoutService.create(id, createWorkoutDto);
   }
 }

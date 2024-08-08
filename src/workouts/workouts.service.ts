@@ -4,6 +4,7 @@ import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { UpdateWorkoutDto } from './dto/update-workout.dto';
 import { ExercisesService } from '../exercises/exercises.service';
+import { WorkoutDto } from '../common/dto/workout.dto';
 
 @Injectable()
 export class WorkoutsService {
@@ -12,14 +13,14 @@ export class WorkoutsService {
     private readonly exercisesService: ExercisesService,
   ) {}
 
-  public async findAll(userId: string) {
+  public async findAll(userId: string): Promise<WorkoutDto[]> {
     return this.databaseService.workout.findMany({
       where: { userId },
       include: { exercises: true },
     });
   }
 
-  public async findOne(id: string) {
+  public async findOne(id: string): Promise<WorkoutDto> {
     const workout = await this.databaseService.workout.findUnique({
       where: { id },
       include: { exercises: true },
@@ -30,7 +31,10 @@ export class WorkoutsService {
     return workout;
   }
 
-  public async create(userId: string, createWorkoutDto: CreateWorkoutDto) {
+  public async create(
+    userId: string,
+    createWorkoutDto: CreateWorkoutDto,
+  ): Promise<WorkoutDto> {
     return this.databaseService.workout.create({
       data: {
         ...createWorkoutDto,
@@ -41,15 +45,18 @@ export class WorkoutsService {
     });
   }
 
-  public async update(id: string, updateWorkoutDto: UpdateWorkoutDto) {
+  public async update(
+    id: string,
+    updateWorkoutDto: UpdateWorkoutDto,
+  ): Promise<WorkoutDto> {
     return this.databaseService.workout.update({
       where: { id },
       data: updateWorkoutDto,
     });
   }
 
-  public async delete(id: string) {
-    const removeWorkout = this.findOne(id);
+  public async delete(id: string): Promise<WorkoutDto> {
+    const removeWorkout = await this.findOne(id);
 
     if (!removeWorkout)
       throw new NotFoundException('Workout not found or has been deleted');
@@ -60,10 +67,12 @@ export class WorkoutsService {
   }
 
   public async findAllExercise(id: string) {
+    await this.findOne(id);
     return this.exercisesService.findAll(id);
   }
 
   public async addExercise(id: string, exerciseDto: CreateExerciseDto) {
+    await this.findOne(id);
     return this.exercisesService.create(id, exerciseDto);
   }
 }

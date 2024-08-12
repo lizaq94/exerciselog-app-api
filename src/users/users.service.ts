@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
 import { DatabaseService } from '../database/database.service';
 import { encryptPassword } from '../utils/bcrypt';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { WorkoutsService } from '../workouts/workouts.service';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
+import { WorkoutsService } from '../workouts/workouts.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 
 @Injectable()
@@ -14,8 +14,10 @@ export class UsersService {
     private readonly workoutService: WorkoutsService,
   ) {}
 
-  async findOne(id: string): Promise<UserDto> {
-    const user = await this.databaseService.user.findUnique({ where: { id } });
+  async findOne(username: string): Promise<UserDto> {
+    const user = await this.databaseService.user.findUnique({
+      where: { username },
+    });
 
     if (!user) throw new NotFoundException('User not found');
 

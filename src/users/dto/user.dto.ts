@@ -1,4 +1,5 @@
-import { WorkoutDto } from '../../common/dto/workout.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsEmail,
@@ -7,8 +8,7 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { WorkoutDto } from '../../common/dto/workout.dto';
 
 export class UserDto {
   @IsUUID()
@@ -25,7 +25,7 @@ export class UserDto {
 
   @IsString()
   @ApiProperty()
-  name: string;
+  username: string;
 
   @IsArray()
   @ValidateNested({ each: true })

@@ -27,6 +27,10 @@ export class UserDto {
   @ApiProperty()
   username: string;
 
+  @IsString()
+  @ApiProperty({ required: false })
+  refreshToken?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => WorkoutDto)

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { encryptPassword } from '../utils/bcrypt';
+import { encrypt } from '../utils/bcrypt';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -14,9 +14,9 @@ export class UsersService {
     private readonly workoutService: WorkoutsService,
   ) {}
 
-  async findOne(username: string): Promise<UserDto> {
+  async findOne(email: string): Promise<UserDto> {
     const user = await this.databaseService.user.findUnique({
-      where: { username },
+      where: { email },
     });
 
     if (!user) throw new NotFoundException('User not found');
@@ -24,8 +24,20 @@ export class UsersService {
     return user;
   }
 
+  async findOneById(id: string): Promise<UserDto> {
+    const user = await this.databaseService.user.findUnique({
+      where: { id },
+    });
+
+    console.log('Kamil user', user);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return user;
+  }
+
   async create(createUserDto: CreateUserDto): Promise<UserDto> {
-    const password = await encryptPassword(createUserDto.password);
+    const password = await encrypt(createUserDto.password);
 
     return this.databaseService.user.create({
       data: {
@@ -45,7 +57,7 @@ export class UsersService {
     let data = updateUserDto;
 
     if (updateUserDto.password) {
-      const password = await encryptPassword(updateUserDto.password);
+      const password = await encrypt(updateUserDto.password);
 
       data = {
         ...updateUserDto,
@@ -60,12 +72,12 @@ export class UsersService {
   }
 
   async findAllWorkouts(id: string) {
-    await this.findOne(id);
+    await this.findOneById(id);
     return this.workoutService.findAll(id);
   }
 
   async addWorkout(id: string, createWorkoutDto: CreateWorkoutDto) {
-    await this.findOne(id);
+    await this.findOneById(id);
     return this.workoutService.create(id, createWorkoutDto);
   }
 }

@@ -5,12 +5,15 @@ import {
   Get,
   Param,
   Patch,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateSetDto } from './dto/update-set.dto';
 import { SetsService } from './sets.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('sets')
 @ApiTags('sets')
 export class SetsController {

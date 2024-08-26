@@ -15,6 +15,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 @ApiTags('users')
 export class UsersController {

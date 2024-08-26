@@ -50,7 +50,7 @@ export class AuthService {
       expires: expireAccessToken,
     });
 
-    response.cookie('Refresh', accessToken, {
+    response.cookie('Refresh', refreshToken, {
       httpOnly: true,
       secure: true,
       expires: expireRefreshToken,

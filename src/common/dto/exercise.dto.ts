@@ -36,4 +36,6 @@ export class ExerciseDto {
   @ValidateNested({ each: true })
   @Type(() => SetDto)
   sets?: SetDto[];
+
+  workoutId?: string;
 }

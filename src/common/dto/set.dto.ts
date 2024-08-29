@@ -16,4 +16,6 @@ export class SetDto {
   @ApiProperty()
   @IsNumber()
   order: number;
+
+  exerciseId?: string;
 }

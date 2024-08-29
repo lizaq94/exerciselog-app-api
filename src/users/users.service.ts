@@ -29,8 +29,6 @@ export class UsersService {
       where: { id },
     });
 
-    console.log('Kamil user', user);
-
     if (!user) throw new NotFoundException('User not found');
 
     return user;

@@ -12,6 +12,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { UpdateSetDto } from './dto/update-set.dto';
 import { SetsService } from './sets.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SetOwnershipGuard } from './set-ownership.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('sets')
@@ -20,6 +21,7 @@ export class SetsController {
   constructor(private setsService: SetsService) {}
 
   @Get(':id')
+  @UseGuards(SetOwnershipGuard)
   findOne(@Param('id') id: string) {
     return this.setsService.findOne(id);
   }

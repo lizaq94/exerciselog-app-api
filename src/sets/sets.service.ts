@@ -2,13 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { UpdateSetDto } from './dto/update-set.dto';
 import { CreateSetDto } from './dto/create-set.dto';
-import { SetDto } from '../common/dto/set.dto';
+import { SetEntity } from './entities/set.entity';
 
 @Injectable()
 export class SetsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async findAll(exerciseId: string): Promise<SetDto[]> {
+  async findAll(exerciseId: string): Promise<SetEntity[]> {
     return this.databaseService.set.findMany({
       where: { exerciseId },
     });
@@ -17,7 +17,7 @@ export class SetsService {
   public async create(
     exerciseId: string,
     createSetDto: CreateSetDto,
-  ): Promise<SetDto> {
+  ): Promise<SetEntity> {
     return this.databaseService.set.create({
       data: {
         ...createSetDto,
@@ -28,7 +28,7 @@ export class SetsService {
     });
   }
 
-  async findOne(id: string): Promise<SetDto> {
+  async findOne(id: string): Promise<SetEntity> {
     const set = await this.databaseService.set.findUnique({
       where: { id },
     });
@@ -38,7 +38,7 @@ export class SetsService {
     return set;
   }
 
-  async update(id: string, updateSetsDto: UpdateSetDto): Promise<SetDto> {
+  async update(id: string, updateSetsDto: UpdateSetDto): Promise<SetEntity> {
     const isSetExist = await this.databaseService.set.findUnique({
       where: { id },
     });
@@ -51,7 +51,7 @@ export class SetsService {
     });
   }
 
-  delete(id: string): Promise<SetDto> {
+  delete(id: string): Promise<SetEntity> {
     const isSetExist = this.findOne(id);
 
     if (!isSetExist)

@@ -5,7 +5,7 @@ import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserDto } from './dto/user.dto';
+import { UserEntity } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -14,7 +14,7 @@ export class UsersService {
     private readonly workoutService: WorkoutsService,
   ) {}
 
-  async findOne(email: string): Promise<UserDto> {
+  async findOne(email: string): Promise<UserEntity> {
     const user = await this.databaseService.user.findUnique({
       where: { email },
     });
@@ -24,7 +24,7 @@ export class UsersService {
     return user;
   }
 
-  async findOneById(id: string): Promise<UserDto> {
+  async findOneById(id: string): Promise<UserEntity> {
     const user = await this.databaseService.user.findUnique({
       where: { id },
     });
@@ -34,7 +34,7 @@ export class UsersService {
     return user;
   }
 
-  async create(createUserDto: CreateUserDto): Promise<UserDto> {
+  async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const password = await encrypt(createUserDto.password);
 
     return this.databaseService.user.create({
@@ -45,7 +45,7 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
     const userToUpdate = await this.databaseService.user.findUnique({
       where: { id },
     });

@@ -4,7 +4,7 @@ import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { SetsService } from '../sets/sets.service';
-import { ExerciseDto } from '../common/dto/exercise.dto';
+import { ExerciseEntity } from './entities/exercise.entity';
 
 @Injectable()
 export class ExercisesService {
@@ -13,7 +13,7 @@ export class ExercisesService {
     private readonly setsService: SetsService,
   ) {}
 
-  public async findAll(workoutId: string): Promise<ExerciseDto[]> {
+  public async findAll(workoutId: string): Promise<ExerciseEntity[]> {
     return this.databaseService.exercise.findMany({
       where: { workoutId },
     });
@@ -22,7 +22,7 @@ export class ExercisesService {
   public async create(
     workoutId: string,
     exerciseDto: CreateExerciseDto,
-  ): Promise<ExerciseDto> {
+  ): Promise<ExerciseEntity> {
     return this.databaseService.exercise.create({
       data: {
         ...exerciseDto,
@@ -33,7 +33,7 @@ export class ExercisesService {
     });
   }
 
-  async findOne(id: string): Promise<ExerciseDto> {
+  async findOne(id: string): Promise<ExerciseEntity> {
     const exercise = await this.databaseService.exercise.findUnique({
       where: { id },
       include: { sets: true },
@@ -47,7 +47,7 @@ export class ExercisesService {
   async update(
     id: string,
     updateExerciseDto: UpdateExerciseDto,
-  ): Promise<ExerciseDto> {
+  ): Promise<ExerciseEntity> {
     const isExerciseExist = await this.databaseService.exercise.findUnique({
       where: { id },
     });
@@ -60,7 +60,7 @@ export class ExercisesService {
     });
   }
 
-  async delete(id: string): Promise<ExerciseDto> {
+  async delete(id: string): Promise<ExerciseEntity> {
     const isExerciseExist = this.findOne(id);
 
     if (!isExerciseExist)

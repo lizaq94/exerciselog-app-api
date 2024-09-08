@@ -4,7 +4,7 @@ import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { UpdateWorkoutDto } from './dto/update-workout.dto';
 import { ExercisesService } from '../exercises/exercises.service';
-import { WorkoutDto } from '../common/dto/workout.dto';
+import { WorkoutEntity } from './entities/workout.entity';
 
 @Injectable()
 export class WorkoutsService {
@@ -13,14 +13,14 @@ export class WorkoutsService {
     private readonly exercisesService: ExercisesService,
   ) {}
 
-  public async findAll(userId: string): Promise<WorkoutDto[]> {
+  public async findAll(userId: string): Promise<WorkoutEntity[]> {
     return this.databaseService.workout.findMany({
       where: { userId },
       include: { exercises: true },
     });
   }
 
-  public async findOne(id: string): Promise<WorkoutDto> {
+  public async findOne(id: string): Promise<WorkoutEntity> {
     const workout = await this.databaseService.workout.findUnique({
       where: { id },
       include: { exercises: true },
@@ -34,7 +34,7 @@ export class WorkoutsService {
   public async create(
     userId: string,
     createWorkoutDto: CreateWorkoutDto,
-  ): Promise<WorkoutDto> {
+  ): Promise<WorkoutEntity> {
     return this.databaseService.workout.create({
       data: {
         ...createWorkoutDto,
@@ -48,14 +48,14 @@ export class WorkoutsService {
   public async update(
     id: string,
     updateWorkoutDto: UpdateWorkoutDto,
-  ): Promise<WorkoutDto> {
+  ): Promise<WorkoutEntity> {
     return this.databaseService.workout.update({
       where: { id },
       data: updateWorkoutDto,
     });
   }
 
-  public async delete(id: string): Promise<WorkoutDto> {
+  public async delete(id: string): Promise<WorkoutEntity> {
     const removeWorkout = await this.findOne(id);
 
     if (!removeWorkout)

@@ -1,8 +1,21 @@
-import { OmitType } from '@nestjs/swagger';
-import { ExerciseDto } from '../../common/dto/exercise.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateExerciseDto extends OmitType(ExerciseDto, [
-  'id',
-  'sets',
-  'workoutId',
-]) {}
+export class CreateExerciseDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty()
+  @IsInt()
+  order: number;
+
+  @ApiProperty()
+  @IsString()
+  type: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  notes: string;
+}

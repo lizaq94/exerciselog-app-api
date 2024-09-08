@@ -1,4 +1,16 @@
-import { OmitType } from '@nestjs/swagger';
-import { SetDto } from '../../common/dto/set.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber } from 'class-validator';
 
-export class CreateSetDto extends OmitType(SetDto, ['id', 'exerciseId']) {}
+export class CreateSetDto {
+  @ApiProperty()
+  @IsNumber()
+  repetitions: number;
+
+  @ApiProperty()
+  @IsNumber()
+  weight: number;
+
+  @ApiProperty()
+  @IsNumber()
+  order: number;
+}

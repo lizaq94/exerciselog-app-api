@@ -1,10 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { compareValueWithHash, encrypt } from '../utils/bcrypt';
-import { UserDto } from '../users/dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as process from 'node:process';
 import { TokenPayload } from './interfaces/token-payload.interface';
+import { UserEntity } from '../users/entities/user.entity';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(user: UserDto, response) {
+  async login(user: UserEntity, response: Response) {
     const expireAccessToken = new Date();
     expireAccessToken.setTime(
       expireAccessToken.getTime() +

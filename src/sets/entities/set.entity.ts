@@ -1,21 +1,19 @@
+import { Set } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsUUID } from 'class-validator';
 
-export class SetDto {
-  @IsUUID()
+export class SetEntity implements Set {
+  @ApiProperty()
   id: string;
 
   @ApiProperty()
-  @IsNumber()
   repetitions: number;
 
   @ApiProperty()
-  @IsNumber()
   weight: number;
 
   @ApiProperty()
-  @IsNumber()
   order: number;
 
-  exerciseId?: string;
+  @ApiProperty()
+  exerciseId: string | null;
 }

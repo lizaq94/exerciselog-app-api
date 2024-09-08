@@ -1,8 +1,16 @@
-import { OmitType } from '@nestjs/swagger';
-import { WorkoutDto } from '../../common/dto/workout.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, IsString } from 'class-validator';
 
-export class CreateWorkoutDto extends OmitType(WorkoutDto, [
-  'id',
-  'exercises',
-  'userId',
-]) {}
+export class CreateWorkoutDto {
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  notes: string;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  duration: number;
+}

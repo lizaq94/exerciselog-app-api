@@ -7,6 +7,7 @@ import { ExercisesModule } from './exercises/exercises.module';
 import { SetsModule } from './sets/sets.module';
 import { UsersModule } from './users/users.module';
 import { WorkoutsModule } from './workouts/workouts.module';
+import { CaslModule } from './casl/casl.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { WorkoutsModule } from './workouts/workouts.module';
     DatabaseModule,
     UsersModule,
     AuthModule,
+    CaslModule,
   ],
   controllers: [AppController],
   providers: [AppService],

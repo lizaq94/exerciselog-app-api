@@ -61,6 +61,7 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     try {
       const user = await this.usersService.findOne(email);
+      console.log('Kamil2 user', user);
       const isAuthorized = await compareValueWithHash(password, user.password);
 
       if (!isAuthorized) {

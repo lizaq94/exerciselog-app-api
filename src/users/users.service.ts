@@ -17,6 +17,7 @@ export class UsersService {
   async findOne(email: string): Promise<UserEntity> {
     const user = await this.databaseService.user.findUnique({
       where: { email },
+      include: { workouts: true },
     });
 
     if (!user) throw new NotFoundException('User not found');
@@ -27,6 +28,9 @@ export class UsersService {
   async findOneById(id: string): Promise<UserEntity> {
     const user = await this.databaseService.user.findUnique({
       where: { id },
+      include: {
+        workouts: { include: { exercises: { include: { sets: true } } } },
+      },
     });
 
     if (!user) throw new NotFoundException('User not found');

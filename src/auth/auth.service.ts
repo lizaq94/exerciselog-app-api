@@ -18,7 +18,7 @@ export class AuthService {
     const expireAccessToken = new Date();
     expireAccessToken.setTime(
       expireAccessToken.getTime() +
-        parseInt(process.env.JWT_ACESS_TOKEN_EXPIRATION_MS),
+        parseInt(process.env.JWT_ACCESS_TOKEN_EXPIRATION_MS),
     );
 
     const expireRefreshToken = new Date();
@@ -33,7 +33,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(tokenPayload, {
       secret: process.env.JWT_ACCESS_TOKEN_SECRET,
-      expiresIn: `${process.env.JWT_ACESS_TOKEN_EXPIRATION_MS}ms`,
+      expiresIn: `${process.env.JWT_ACCESS_TOKEN_EXPIRATION_MS}ms`,
     });
 
     const refreshToken = this.jwtService.sign(tokenPayload, {

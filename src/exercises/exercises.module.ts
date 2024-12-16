@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
+import { CaslModule } from '../casl/casl.module';
+import { SetsModule } from '../sets/sets.module';
 import { ExercisesController } from './exercises.controller';
 import { ExercisesService } from './exercises.service';
-import { SetsModule } from '../sets/sets.module';
-import { CaslModule } from '../casl/casl.module';
 
 @Module({
   imports: [SetsModule, CaslModule],
   controllers: [ExercisesController],
-  providers: [ExercisesService],
+  providers: [
+    ExercisesService,
+    { provide: 'ExercisesService', useClass: ExercisesService },
+  ],
   exports: [ExercisesService],
 })
 export class ExercisesModule {}

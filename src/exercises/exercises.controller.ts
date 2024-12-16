@@ -15,15 +15,15 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateSetDto } from '../sets/dto/create-set.dto';
-import { UpdateExerciseDto } from './dto/update-exercise.dto';
-import { ExercisesService } from './exercises.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ExerciseEntity } from './entities/exercise.entity';
+import { ResourceType } from '../casl/decorators/resource-type.decorator';
+import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { Resource } from '../casl/types/resource.type';
+import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { SetEntity } from '../sets/entities/set.entity';
-import { PoliciesGuard } from '../casl/guards/policies.guard';
-import { CheckPolicies } from '../casl/decorators/check-policies.decorator';
-import { Action, AppAbility } from '../casl/casl-ability.factory';
+import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { ExerciseEntity } from './entities/exercise.entity';
+import { ExercisesService } from './exercises.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('exercises')
@@ -33,10 +33,8 @@ export class ExercisesController {
 
   @Get(':id')
   @ApiOkResponse({ type: ExerciseEntity })
-  @UseGuards(PoliciesGuard)
-  @CheckPolicies((ability: AppAbility, exercise: ExerciseEntity) =>
-    ability.can(Action.Manage, exercise),
-  )
+  @ResourceType(Resource.EXERCISE)
+  @UseGuards(OwnershipGuard)
   findOne(@Param('id') id: string) {
     return this.exerciseService.findOne(id);
   }

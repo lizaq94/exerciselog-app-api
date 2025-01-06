@@ -22,16 +22,16 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserEntity } from './entities/user.entity';
 import { WorkoutEntity } from '../workouts/entities/workout.entity';
 
-@UseGuards(JwtAuthGuard)
 @Controller('users')
 @ApiTags('users')
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: UserEntity })
   findOne(@Param('id') id: string) {
-    return this.userService.findOne(id);
+    return this.userService.findOneById(id);
   }
 
   @Post()
@@ -42,6 +42,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiBody({ type: UpdateUserDto })
   @ApiOkResponse({ type: UserEntity })
   update(

@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { CaslModule } from '../casl/casl.module';
+import { SetsModule } from '../sets/sets.module';
 import { ExercisesController } from './exercises.controller';
 import { ExercisesService } from './exercises.service';
-import { SetsModule } from '../sets/sets.module';
 
 @Module({
-  imports: [SetsModule],
+  imports: [SetsModule, forwardRef(() => CaslModule)],
   controllers: [ExercisesController],
   providers: [ExercisesService],
   exports: [ExercisesService],

@@ -9,6 +9,9 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ResourceType } from '../casl/decorators/resource-type.decorator';
+import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { Resource } from '../casl/types/resource.type';
 import { UpdateSetDto } from './dto/update-set.dto';
 import { SetsService } from './sets.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -27,6 +30,8 @@ export class SetsController {
   }
 
   @Patch(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.SET)
   @ApiBody({ type: UpdateSetDto })
   @ApiOkResponse({ type: SetEntity })
   update(
@@ -37,6 +42,8 @@ export class SetsController {
   }
 
   @Delete(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.SET)
   @ApiOkResponse({ type: SetEntity })
   delete(@Param('id') id: string) {
     return this.setsService.delete(id);

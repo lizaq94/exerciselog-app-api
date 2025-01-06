@@ -15,6 +15,9 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ResourceType } from '../casl/decorators/resource-type.decorator';
+import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { Resource } from '../casl/types/resource.type';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { UpdateWorkoutDto } from './dto/update-workout.dto';
 import { WorkoutsService } from './workouts.service';
@@ -35,6 +38,8 @@ export class WorkoutsController {
   }
 
   @Patch(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.WORKOUT)
   @ApiBody({ type: UpdateWorkoutDto })
   @ApiOkResponse({ type: WorkoutEntity })
   update(
@@ -45,6 +50,8 @@ export class WorkoutsController {
   }
 
   @Delete(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.WORKOUT)
   @ApiOkResponse({ type: WorkoutEntity })
   delete(@Param('id') id: string) {
     return this.workoutService.delete(id);
@@ -57,6 +64,8 @@ export class WorkoutsController {
   }
 
   @Post(':id/exercises')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.WORKOUT)
   @ApiBody({ type: CreateExerciseDto })
   @ApiCreatedResponse({ type: ExerciseEntity })
   addExercise(

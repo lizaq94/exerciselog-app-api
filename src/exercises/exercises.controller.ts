@@ -15,12 +15,15 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateSetDto } from '../sets/dto/create-set.dto';
-import { UpdateExerciseDto } from './dto/update-exercise.dto';
-import { ExercisesService } from './exercises.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ExerciseEntity } from './entities/exercise.entity';
+import { ResourceType } from '../casl/decorators/resource-type.decorator';
+import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { Resource } from '../casl/types/resource.type';
+import { CreateSetDto } from '../sets/dto/create-set.dto';
 import { SetEntity } from '../sets/entities/set.entity';
+import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { ExerciseEntity } from './entities/exercise.entity';
+import { ExercisesService } from './exercises.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('exercises')
@@ -35,6 +38,8 @@ export class ExercisesController {
   }
 
   @Patch(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.EXERCISE)
   @ApiBody({ type: UpdateExerciseDto })
   @ApiOkResponse({ type: ExerciseEntity })
   update(
@@ -45,6 +50,8 @@ export class ExercisesController {
   }
 
   @Delete(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.EXERCISE)
   @ApiOkResponse({ type: ExerciseEntity })
   delete(@Param('id') id: string) {
     return this.exerciseService.delete(id);
@@ -57,6 +64,8 @@ export class ExercisesController {
   }
 
   @Post(':id/sets')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.EXERCISE)
   @ApiBody({ type: CreateSetDto })
   @ApiCreatedResponse({ type: SetEntity })
   addSet(@Param('id') id: string, @Body() createSetDto: CreateSetDto) {

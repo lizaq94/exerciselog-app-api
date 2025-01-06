@@ -22,6 +22,9 @@ export class AuthController {
   ) {
     return this.authService.login(user, response);
   }
+  //TODO: Create signup controller
+  @Post('signup')
+  async signUp() {}
 
   @Post('refresh')
   @UseGuards(JwtRefreshAuthGuard)
@@ -31,4 +34,8 @@ export class AuthController {
   ) {
     return this.authService.login(user, response);
   }
+
+  //TODO: Create logout controller
+  @Post('logout')
+  async logout() {}
 }

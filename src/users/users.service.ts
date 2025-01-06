@@ -40,6 +40,7 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const password = await encrypt(createUserDto.password);
+    console.log('Kamil here ');
 
     return this.databaseService.user.create({
       data: {

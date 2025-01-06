@@ -33,13 +33,13 @@ export class ExercisesController {
 
   @Get(':id')
   @ApiOkResponse({ type: ExerciseEntity })
-  @ResourceType(Resource.EXERCISE)
-  @UseGuards(OwnershipGuard)
   findOne(@Param('id') id: string) {
     return this.exerciseService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.EXERCISE)
   @ApiBody({ type: UpdateExerciseDto })
   @ApiOkResponse({ type: ExerciseEntity })
   update(
@@ -50,6 +50,8 @@ export class ExercisesController {
   }
 
   @Delete(':id')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.EXERCISE)
   @ApiOkResponse({ type: ExerciseEntity })
   delete(@Param('id') id: string) {
     return this.exerciseService.delete(id);
@@ -62,6 +64,8 @@ export class ExercisesController {
   }
 
   @Post(':id/sets')
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.EXERCISE)
   @ApiBody({ type: CreateSetDto })
   @ApiCreatedResponse({ type: SetEntity })
   addSet(@Param('id') id: string, @Body() createSetDto: CreateSetDto) {

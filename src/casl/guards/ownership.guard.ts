@@ -5,9 +5,15 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
+import { WorkoutsService } from '../../workouts/workouts.service';
+import { ExercisesService } from '../../exercises/exercises.service';
+import { SetsService } from '../../sets/sets.service';
 import { Action, CaslAbilityFactory } from '../casl-ability.factory';
 import { RESOURCE_TYPE_KEY } from '../decorators/resource-type.decorator';
 import { Resource } from '../types/resource.type';
+import { WorkoutEntity } from '../../workouts/entities/workout.entity';
+import { ExerciseEntity } from '../../exercises/entities/exercise.entity';
+import { SetEntity } from '../../sets/entities/set.entity';
 
 @Injectable()
 export class OwnershipGuard implements CanActivate {
@@ -17,12 +23,39 @@ export class OwnershipGuard implements CanActivate {
     private moduleRef: ModuleRef,
   ) {}
 
+  private entityMap = {
+    [Resource.WORKOUT]: WorkoutEntity,
+    [Resource.EXERCISE]: ExerciseEntity,
+    [Resource.SET]: SetEntity,
+  };
+
+  private async getService(serviceName: string) {
+    switch (serviceName) {
+      case Resource.WORKOUT:
+        return this.moduleRef.resolve(WorkoutsService);
+      case Resource.EXERCISE:
+        return this.moduleRef.resolve(ExercisesService);
+      case Resource.SET:
+        return this.moduleRef.resolve(SetsService);
+      default:
+        throw new ForbiddenException('Invalid resource type.');
+    }
+  }
+
+  private toEntity(resource: any, resourceType: Resource) {
+    const EntityClass = this.entityMap[resourceType];
+    if (!EntityClass) {
+      throw new Error(`Entity type ${resourceType} is not recognized.`);
+    }
+    return Object.assign(new EntityClass(), resource);
+  }
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('Nie znaleziono użytkownika');
+      throw new ForbiddenException('User not found');
     }
 
     const ability = this.caslAbilityFactory.defineAbility(user);
@@ -33,32 +66,24 @@ export class OwnershipGuard implements CanActivate {
     );
 
     if (!resourceType) {
-      throw new Error('The resource type is not specified in the metadata.');
+      throw new Error('Resource type not specified.');
     }
 
-    let resource;
-    switch (resourceType) {
-      case Resource.WORKOUT:
-        resource = await this.moduleRef
-          .get('WorkoutsService')
-          .findOne(resourceId);
-        break;
-      case Resource.EXERCISE:
-        resource = await this.moduleRef
-          .get('ExercisesService')
-          .findOne(resourceId);
-        break;
-      case Resource.SET:
-        resource = await this.moduleRef.get('SetsService').findOne(resourceId);
-        break;
-      default:
-        throw new ForbiddenException('Invalid resource type.');
+    const resourceService = await this.getService(resourceType);
+    const resource = await resourceService.findOne(resourceId);
+
+    if (!resource) {
+      throw new ForbiddenException('Resource not found.');
     }
 
-    if (resource && ability.can(Action.Manage, resource)) {
-      return true;
+    const entityResource = this.toEntity(resource, resourceType);
+
+    const canManage = ability.can(Action.Manage, entityResource);
+
+    if (!canManage) {
+      throw new ForbiddenException('No permission to manage the resource.');
     }
 
-    throw new ForbiddenException('No permission to manage the resource.');
+    return true;
   }
 }

@@ -1,15 +1,13 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { CaslModule } from '../casl/casl.module';
 import { ExercisesModule } from '../exercises/exercises.module';
 import { WorkoutsController } from './workouts.controller';
 import { WorkoutsService } from './workouts.service';
 
 @Module({
-  imports: [ExercisesModule],
+  imports: [ExercisesModule, forwardRef(() => CaslModule)],
   controllers: [WorkoutsController],
-  providers: [
-    WorkoutsService,
-    { provide: 'WorkoutsService', useClass: WorkoutsService },
-  ],
+  providers: [WorkoutsService],
   exports: [WorkoutsService],
 })
 export class WorkoutsModule {}

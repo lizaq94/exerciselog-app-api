@@ -1,22 +1,13 @@
+import { InferSubjects } from '@casl/ability';
+import { createPrismaAbility, PrismaAbility } from '@casl/prisma';
 import { Injectable } from '@nestjs/common';
-import { UserEntity } from '../users/entities/user.entity';
-import {
-  AbilityBuilder,
-  createMongoAbility,
-  ExtractSubjectType,
-  InferSubjects,
-  MongoAbility,
-} from '@casl/ability';
-import { WorkoutEntity } from '../workouts/entities/workout.entity';
 import { ExerciseEntity } from '../exercises/entities/exercise.entity';
 import { SetEntity } from '../sets/entities/set.entity';
+import { UserEntity } from '../users/entities/user.entity';
+import { WorkoutEntity } from '../workouts/entities/workout.entity';
 
 export enum Action {
   Manage = 'manage',
-  Create = 'create',
-  Read = 'read',
-  Update = 'update',
-  Delete = 'delete',
 }
 
 export type Subjects = InferSubjects<
@@ -24,36 +15,39 @@ export type Subjects = InferSubjects<
   | typeof WorkoutEntity
   | typeof ExerciseEntity
   | typeof SetEntity
-  | 'all'
 >;
 
-export type AppAbility = MongoAbility<[Action, Subjects]>;
+export type AppAbility = PrismaAbility<[Action, Subjects]>;
 
 @Injectable()
 export class CaslAbilityFactory {
-  defineAbility(user: UserEntity) {
-    const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
+  defineAbility(user: UserEntity): AppAbility {
+    const allUserWorkoutIds = user.workouts.map((workout) => workout.id);
+    const allUserExercisesIds = user.workouts.flatMap(
+      (workout) => workout.exercises?.map((exercise) => exercise.id) || [],
+    );
 
-    can(Action.Manage, WorkoutEntity, { userId: user.id });
-
-    can(Action.Manage, ExerciseEntity, {
-      workoutId: {
-        $in: user.workouts.map((workout) => workout.id),
+    return createPrismaAbility<[Action, Subjects]>([
+      {
+        action: Action.Manage,
+        subject: UserEntity,
+        conditions: { id: user.id },
       },
-    });
-
-    const allUserExercisesIds = [];
-
-    user?.workouts?.forEach((workout) => {
-      if (workout.exercises?.length)
-        allUserExercisesIds.push(...workout.exercises);
-    });
-
-    can(Action.Manage, SetEntity, { exerciseId: { $in: allUserExercisesIds } });
-
-    return build({
-      detectSubjectType: (item) =>
-        item.constructor as ExtractSubjectType<Subjects>,
-    });
+      {
+        action: Action.Manage,
+        subject: WorkoutEntity,
+        conditions: { userId: user.id },
+      },
+      {
+        action: Action.Manage,
+        subject: ExerciseEntity,
+        conditions: { workoutId: { in: allUserWorkoutIds } },
+      },
+      {
+        action: Action.Manage,
+        subject: SetEntity,
+        conditions: { exerciseId: { in: allUserExercisesIds } },
+      },
+    ]);
   }
 }

@@ -14,13 +14,16 @@ export class UsersService {
     private readonly workoutService: WorkoutsService,
   ) {}
 
-  async findOne(email: string): Promise<UserEntity> {
+  async findOne(
+    email: string,
+    throwError: boolean = true,
+  ): Promise<UserEntity> {
     const user = await this.databaseService.user.findUnique({
       where: { email },
       include: { workouts: true },
     });
 
-    if (!user) throw new NotFoundException('User not found');
+    if (!user && throwError) throw new NotFoundException('User not found');
 
     return user;
   }
@@ -40,7 +43,6 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const password = await encrypt(createUserDto.password);
-    console.log('Kamil here ');
 
     return this.databaseService.user.create({
       data: {

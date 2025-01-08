@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
 import { compareValueWithHash, encrypt } from '../utils/bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -9,12 +10,55 @@ import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
+  private ACCESS_TOKEN_COOKIE = 'Authentication';
+  private REFRESH_TOKEN_COOKIE = 'Refresh';
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {}
 
   async login(user: UserEntity, response: Response) {
+    const { accessToken, refreshToken, expireAccessToken, expireRefreshToken } =
+      this.generateTokens(user.id);
+
+    await this.setCookies(
+      response,
+      user.id,
+      accessToken,
+      refreshToken,
+      expireAccessToken,
+      expireRefreshToken,
+    );
+  }
+
+  async signup(userData: CreateUserDto, response: Response) {
+    const existingUser = await this.usersService.findOne(userData.email, false);
+
+    if (existingUser) {
+      throw new UnauthorizedException('User already exists.');
+    }
+
+    const newUser = await this.usersService.create(userData);
+
+    const { accessToken, refreshToken, expireAccessToken, expireRefreshToken } =
+      this.generateTokens(newUser.id);
+
+    await this.setCookies(
+      response,
+      newUser.id,
+      accessToken,
+      refreshToken,
+      expireAccessToken,
+      expireRefreshToken,
+    );
+  }
+
+  async logout(user: UserEntity, response: Response) {
+    await this.usersService.update(user.id, { refreshToken: null });
+    this.clearCookies(response);
+  }
+
+  private generateTokens(userId: string) {
     const expireAccessToken = new Date();
     expireAccessToken.setTime(
       expireAccessToken.getTime() +
@@ -28,7 +72,7 @@ export class AuthService {
     );
 
     const tokenPayload: TokenPayload = {
-      userId: user.id,
+      userId: userId,
     };
 
     const accessToken = this.jwtService.sign(tokenPayload, {
@@ -41,21 +85,37 @@ export class AuthService {
       expiresIn: `${process.env.JWT_REFRESH_TOKEN_EXPIRATION_MS}ms`,
     });
 
-    await this.usersService.update(user.id, {
+    return { expireAccessToken, expireRefreshToken, accessToken, refreshToken };
+  }
+
+  private async setCookies(
+    response: Response,
+    userId: string,
+    accessToken: string,
+    refreshToken: string,
+    expireAccessToken: Date,
+    expireRefreshToken: Date,
+  ) {
+    await this.usersService.update(userId, {
       refreshToken: await encrypt(refreshToken),
     });
 
-    response.cookie('Authentication', accessToken, {
+    response.cookie(this.ACCESS_TOKEN_COOKIE, accessToken, {
       httpOnly: true,
       secure: true,
       expires: expireAccessToken,
     });
 
-    response.cookie('Refresh', refreshToken, {
+    response.cookie(this.REFRESH_TOKEN_COOKIE, refreshToken, {
       httpOnly: true,
       secure: true,
       expires: expireRefreshToken,
     });
+  }
+
+  private clearCookies(response: Response) {
+    response.clearCookie(this.REFRESH_TOKEN_COOKIE);
+    response.clearCookie(this.ACCESS_TOKEN_COOKIE);
   }
 
   async validateUser(email: string, password: string) {

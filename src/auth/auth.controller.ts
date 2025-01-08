@@ -1,5 +1,13 @@
-import { Controller, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Res,
+  UseGuards,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
@@ -22,9 +30,14 @@ export class AuthController {
   ) {
     return this.authService.login(user, response);
   }
-  //TODO: Create signup controller
+
   @Post('signup')
-  async signUp() {}
+  async signUp(
+    @Body(ValidationPipe) creatUserDto: CreateUserDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.signup(creatUserDto, response);
+  }
 
   @Post('refresh')
   @UseGuards(JwtRefreshAuthGuard)
@@ -35,7 +48,12 @@ export class AuthController {
     return this.authService.login(user, response);
   }
 
-  //TODO: Create logout controller
   @Post('logout')
-  async logout() {}
+  @UseGuards(JwtRefreshAuthGuard)
+  async logout(
+    @CurrentUser() user: UserEntity,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.logout(user, response);
+  }
 }

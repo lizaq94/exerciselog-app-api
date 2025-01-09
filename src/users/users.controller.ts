@@ -6,21 +6,20 @@ import {
   Patch,
   Post,
   UseGuards,
-  ValidationPipe,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import {
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UserEntity } from './entities/user.entity';
+import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { WorkoutEntity } from '../workouts/entities/workout.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserEntity } from './entities/user.entity';
+import { UsersService } from './users.service';
 
 @Controller('users')
 @ApiTags('users')
@@ -37,7 +36,7 @@ export class UsersController {
   @Post()
   @ApiBody({ type: CreateUserDto })
   @ApiCreatedResponse({ type: UserEntity })
-  create(@Body(ValidationPipe) creatUserDto: CreateUserDto) {
+  create(@Body() creatUserDto: CreateUserDto) {
     return this.userService.create(creatUserDto);
   }
 
@@ -45,10 +44,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBody({ type: UpdateUserDto })
   @ApiOkResponse({ type: UserEntity })
-  update(
-    @Param('id') id: string,
-    @Body(ValidationPipe) updateUserDto: UpdateUserDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 
@@ -63,7 +59,7 @@ export class UsersController {
   @ApiCreatedResponse({ type: WorkoutEntity })
   addWorkout(
     @Param('id') id: string,
-    @Body(ValidationPipe) createWorkoutDto: CreateWorkoutDto,
+    @Body() createWorkoutDto: CreateWorkoutDto,
   ) {
     return this.userService.addWorkout(id, createWorkoutDto);
   }

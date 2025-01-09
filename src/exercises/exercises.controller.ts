@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   UseGuards,
-  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -44,7 +43,7 @@ export class ExercisesController {
   @ApiOkResponse({ type: ExerciseEntity })
   update(
     @Param('id') id: string,
-    @Body(ValidationPipe) updateExerciseDto: UpdateExerciseDto,
+    @Body() updateExerciseDto: UpdateExerciseDto,
   ) {
     return this.exerciseService.update(id, updateExerciseDto);
   }

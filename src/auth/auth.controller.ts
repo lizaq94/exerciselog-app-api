@@ -1,20 +1,13 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Res,
-  UseGuards,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { CreateUserDto } from '../users/dto/create-user.dto';
-import { AuthService } from './auth.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { CurrentUser } from './current-user.decorator';
 import { Response } from 'express';
-import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
-import { LoginInDto } from './dto/sign-in.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UserEntity } from '../users/entities/user.entity';
+import { AuthService } from './auth.service';
+import { CurrentUser } from './current-user.decorator';
+import { LoginInDto } from './dto/sign-in.dto';
+import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -33,7 +26,7 @@ export class AuthController {
 
   @Post('signup')
   async signUp(
-    @Body(ValidationPipe) creatUserDto: CreateUserDto,
+    @Body() creatUserDto: CreateUserDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     return this.authService.signup(creatUserDto, response);

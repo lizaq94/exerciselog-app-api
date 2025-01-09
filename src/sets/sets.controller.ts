@@ -6,7 +6,6 @@ import {
   Param,
   Patch,
   UseGuards,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ResourceType } from '../casl/decorators/resource-type.decorator';
@@ -34,10 +33,7 @@ export class SetsController {
   @ResourceType(Resource.SET)
   @ApiBody({ type: UpdateSetDto })
   @ApiOkResponse({ type: SetEntity })
-  update(
-    @Param('id') id: string,
-    @Body(ValidationPipe) updateSetsDto: UpdateSetDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateSetsDto: UpdateSetDto) {
     return this.setsService.update(id, updateSetsDto);
   }
 

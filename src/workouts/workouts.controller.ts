@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   UseGuards,
-  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -15,15 +14,15 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ResourceType } from '../casl/decorators/resource-type.decorator';
 import { OwnershipGuard } from '../casl/guards/ownership.guard';
 import { Resource } from '../casl/types/resource.type';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
-import { UpdateWorkoutDto } from './dto/update-workout.dto';
-import { WorkoutsService } from './workouts.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { WorkoutEntity } from './entities/workout.entity';
 import { ExerciseEntity } from '../exercises/entities/exercise.entity';
+import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { WorkoutEntity } from './entities/workout.entity';
+import { WorkoutsService } from './workouts.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')
@@ -42,10 +41,7 @@ export class WorkoutsController {
   @ResourceType(Resource.WORKOUT)
   @ApiBody({ type: UpdateWorkoutDto })
   @ApiOkResponse({ type: WorkoutEntity })
-  update(
-    @Param('id') id: string,
-    @Body(ValidationPipe) updateWorkoutsDto: UpdateWorkoutDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateWorkoutsDto: UpdateWorkoutDto) {
     return this.workoutService.update(id, updateWorkoutsDto);
   }
 
@@ -70,7 +66,7 @@ export class WorkoutsController {
   @ApiCreatedResponse({ type: ExerciseEntity })
   addExercise(
     @Param('id') id: string,
-    @Body(ValidationPipe) createExerciseDto: CreateExerciseDto,
+    @Body() createExerciseDto: CreateExerciseDto,
   ) {
     return this.workoutService.addExercise(id, createExerciseDto);
   }

@@ -7,7 +7,13 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOkResponse,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ResourceType } from '../casl/decorators/resource-type.decorator';
 import { OwnershipGuard } from '../casl/guards/ownership.guard';
 import { Resource } from '../casl/types/resource.type';
@@ -23,24 +29,54 @@ export class SetsController {
   constructor(private setsService: SetsService) {}
 
   @Get(':id')
-  @ApiOkResponse({ type: SetEntity })
+  @ApiOperation({ summary: 'Retrieve a specific set by its unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'Unique identifier for the set',
+    example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
+  })
+  @ApiOkResponse({
+    description: 'Returns the set matching the provided ID',
+    type: SetEntity,
+  })
   findOne(@Param('id') id: string) {
     return this.setsService.findOne(id);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update an existing set by its ID' })
   @UseGuards(OwnershipGuard)
   @ResourceType(Resource.SET)
-  @ApiBody({ type: UpdateSetDto })
-  @ApiOkResponse({ type: SetEntity })
+  @ApiParam({
+    name: 'id',
+    description: 'Unique identifier of the set to update',
+    example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
+  })
+  @ApiBody({
+    description: 'Fields to update for the set',
+    type: UpdateSetDto,
+  })
+  @ApiOkResponse({
+    description: 'Returns the updated set entity',
+    type: SetEntity,
+  })
   update(@Param('id') id: string, @Body() updateSetsDto: UpdateSetDto) {
     return this.setsService.update(id, updateSetsDto);
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a set by its unique ID' })
   @UseGuards(OwnershipGuard)
   @ResourceType(Resource.SET)
-  @ApiOkResponse({ type: SetEntity })
+  @ApiParam({
+    name: 'id',
+    description: 'Unique identifier of the set to delete',
+    example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
+  })
+  @ApiOkResponse({
+    description: 'Returns the deleted set entity',
+    type: SetEntity,
+  })
   delete(@Param('id') id: string) {
     return this.setsService.delete(id);
   }

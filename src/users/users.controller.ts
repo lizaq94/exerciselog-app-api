@@ -12,6 +12,8 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiTags,
+  ApiOperation,
+  ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
@@ -28,35 +30,115 @@ export class UsersController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: UserEntity })
+  @ApiOperation({ summary: 'Get a user by ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique identifier of the user',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiOkResponse({
+    type: UserEntity,
+    description: 'Returns a user entity based on the ID provided',
+  })
   findOne(@Param('id') id: string) {
     return this.userService.findOneById(id);
   }
 
   @Post()
-  @ApiBody({ type: CreateUserDto })
-  @ApiCreatedResponse({ type: UserEntity })
-  create(@Body() creatUserDto: CreateUserDto) {
-    return this.userService.create(creatUserDto);
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiBody({
+    type: CreateUserDto,
+    description: 'The data to create a new user',
+    examples: {
+      example1: {
+        value: {
+          username: 'johndoe',
+          email: 'johndoe@example.com',
+          password: 'securepassword123',
+        },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    type: UserEntity,
+    description: 'Creates a new user and returns the created user entity',
+  })
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.userService.create(createUserDto);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiBody({ type: UpdateUserDto })
-  @ApiOkResponse({ type: UserEntity })
+  @ApiOperation({ summary: 'Update an existing user' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique identifier of the user to be updated',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    type: UpdateUserDto,
+    description: 'The data to update the user information',
+    examples: {
+      example1: {
+        value: {
+          email: 'newemail@example.com',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    type: UserEntity,
+    description: 'Updates a user and returns the updated user entity',
+  })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: WorkoutEntity, isArray: true })
+  @ApiOperation({ summary: 'Get all workouts for a user' })
+  @ApiParam({
+    name: 'id',
+    description:
+      'The unique identifier of the user whose workouts are retrieved',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiOkResponse({
+    type: WorkoutEntity,
+    isArray: true,
+    description: 'Returns a list of workouts associated with the user',
+  })
   @Get(':id/workouts')
   findAllWorkouts(@Param('id') id: string) {
     return this.userService.findAllWorkouts(id);
   }
 
   @Post(':id/workouts')
-  @ApiCreatedResponse({ type: WorkoutEntity })
+  @ApiOperation({ summary: 'Add a workout to a user' })
+  @ApiParam({
+    name: 'id',
+    description:
+      'The unique identifier of the user to whom the workout will be added',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    type: CreateWorkoutDto,
+    description: 'The workout data to add to a user',
+    examples: {
+      example1: {
+        value: {
+          name: 'Morning Strength Training',
+          date: '2023-10-21T10:00:00.000Z',
+          duration: 45,
+          notes: 'Focus on lower body exercises',
+        },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    type: WorkoutEntity,
+    description:
+      'Adds a workout to a user and returns the created workout entity',
+  })
   addWorkout(
     @Param('id') id: string,
     @Body() createWorkoutDto: CreateWorkoutDto,

@@ -1,21 +1,29 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class CreateExerciseDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Exercise name', example: 'Bench press' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The position of the exercise in a workout sequence',
+    example: 1,
+    minimum: 1,
+  })
   @IsInt()
+  @Min(1)
   order: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Type of the exercise', example: 'Strength' })
   @IsString()
   type: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({
+    description: 'Optional notes about the exercise',
+    required: false,
+  })
   @IsString()
   notes: string;
 }

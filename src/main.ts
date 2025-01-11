@@ -9,9 +9,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = new DocumentBuilder()
     .setTitle('Exerciselog')
-    .setDescription('The ExerciseLog API description')
+    .setDescription(
+      'API for managing exercise logs, including creating, updating, and retrieving workout sessions. Supports JWT-based authentication for secure access.',
+    )
     .setVersion('0.1')
-    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

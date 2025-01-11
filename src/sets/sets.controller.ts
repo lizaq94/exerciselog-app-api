@@ -9,10 +9,11 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiNoContentResponse,
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiTags,
 } from '@nestjs/swagger';
 import { ResourceType } from '../casl/decorators/resource-type.decorator';
 import { OwnershipGuard } from '../casl/guards/ownership.guard';
@@ -73,9 +74,8 @@ export class SetsController {
     description: 'Unique identifier of the set to delete',
     example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
   })
-  @ApiOkResponse({
-    description: 'Returns the deleted set entity',
-    type: SetEntity,
+  @ApiNoContentResponse({
+    description: 'Set deleted successfully. No content returned.',
   })
   delete(@Param('id') id: string) {
     return this.setsService.delete(id);

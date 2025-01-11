@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -11,10 +12,11 @@ import {
 import {
   ApiBody,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ResourceType } from '../casl/decorators/resource-type.decorator';
@@ -69,6 +71,7 @@ export class WorkoutsController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete a workout by its unique ID' })
   @UseGuards(OwnershipGuard)
   @ResourceType(Resource.WORKOUT)
@@ -77,9 +80,8 @@ export class WorkoutsController {
     description: 'Unique identifier of the workout to delete',
     example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
   })
-  @ApiOkResponse({
-    description: 'Returns the deleted workout entity',
-    type: WorkoutEntity,
+  @ApiNoContentResponse({
+    description: 'Workout deleted successfully. No content returned.',
   })
   delete(@Param('id') id: string) {
     return this.workoutService.delete(id);

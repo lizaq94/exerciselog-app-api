@@ -51,12 +51,13 @@ export class SetsService {
     });
   }
 
-  delete(id: string): Promise<SetEntity> {
+  async delete(id: string): Promise<void> {
     const isSetExist = this.findOne(id);
 
-    if (!isSetExist)
+    if (!isSetExist) {
       throw new NotFoundException('Set not found or has been deleted');
+    }
 
-    return this.databaseService.set.delete({ where: { id } });
+    this.databaseService.set.delete({ where: { id } });
   }
 }

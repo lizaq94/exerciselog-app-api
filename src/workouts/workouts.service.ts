@@ -55,15 +55,13 @@ export class WorkoutsService {
     });
   }
 
-  public async delete(id: string): Promise<WorkoutEntity> {
+  public async delete(id: string): Promise<void> {
     const removeWorkout = await this.findOne(id);
 
     if (!removeWorkout)
       throw new NotFoundException('Workout not found or has been deleted');
 
     await this.databaseService.workout.delete({ where: { id } });
-
-    return removeWorkout;
   }
 
   public async findAllExercise(id: string) {

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -11,6 +12,7 @@ import {
 import {
   ApiBody,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -72,6 +74,7 @@ export class ExercisesController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete an exercise by its ID' })
   @UseGuards(OwnershipGuard)
   @ResourceType(Resource.EXERCISE)
@@ -80,9 +83,8 @@ export class ExercisesController {
     description: 'The ID of the exercise to delete',
     example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
   })
-  @ApiOkResponse({
-    description: 'Returns the deleted exercise entity',
-    type: ExerciseEntity,
+  @ApiNoContentResponse({
+    description: 'Exercise deleted successfully. No content returned.',
   })
   delete(@Param('id') id: string) {
     return this.exerciseService.delete(id);

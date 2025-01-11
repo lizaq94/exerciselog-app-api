@@ -60,13 +60,13 @@ export class ExercisesService {
     });
   }
 
-  async delete(id: string): Promise<ExerciseEntity> {
+  async delete(id: string): Promise<void> {
     const isExerciseExist = this.findOne(id);
 
     if (!isExerciseExist)
       throw new NotFoundException('Exercise not found or has been deleted');
 
-    return this.databaseService.exercise.delete({ where: { id } });
+    this.databaseService.exercise.delete({ where: { id } });
   }
 
   async findAllSets(id: string) {

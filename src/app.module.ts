@@ -8,9 +8,17 @@ import { ExercisesModule } from './exercises/exercises.module';
 import { SetsModule } from './sets/sets.module';
 import { UsersModule } from './users/users.module';
 import { WorkoutsModule } from './workouts/workouts.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     ExercisesModule,
     SetsModule,
     WorkoutsModule,
@@ -20,6 +28,6 @@ import { WorkoutsModule } from './workouts/workouts.module';
     CaslModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

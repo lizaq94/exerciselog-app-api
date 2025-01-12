@@ -76,6 +76,15 @@ export class UsersService {
     });
   }
 
+  async delete(id: string): Promise<void> {
+    const isUserExist = this.findOne(id);
+
+    if (!isUserExist)
+      throw new NotFoundException('User not found or has been deleted');
+
+    this.databaseService.user.delete({ where: { id } });
+  }
+
   async findAllWorkouts(id: string) {
     await this.findOneById(id);
     return this.workoutService.findAll(id);

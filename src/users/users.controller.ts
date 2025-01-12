@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -10,10 +12,11 @@ import {
 import {
   ApiBody,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
@@ -92,6 +95,22 @@ export class UsersController {
   })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete an user by its ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the user to delete',
+    example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
+  })
+  @ApiNoContentResponse({
+    description: 'User deleted successfully. No content returned.',
+  })
+  delete(@Param('id') id: string) {
+    return this.userService.delete(id);
   }
 
   @UseGuards(JwtAuthGuard)

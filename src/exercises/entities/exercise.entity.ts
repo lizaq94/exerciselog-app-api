@@ -48,4 +48,16 @@ export class ExerciseEntity implements Exercise {
     nullable: true,
   })
   workoutId: string | null;
+
+  @ApiProperty({
+    description: 'The date and time when the exercise was created',
+    example: '2025-01-01T12:34:56.789Z',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'The date and time when the exercise data was last updated',
+    example: '2025-01-15T08:21:45.123Z',
+  })
+  updatedAt: Date;
 }

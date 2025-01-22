@@ -43,4 +43,16 @@ export class UserEntity implements User {
     required: false,
   })
   workouts?: WorkoutEntity[];
+
+  @ApiProperty({
+    description: 'The date and time when the user was created',
+    example: '2025-01-01T12:34:56.789Z',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'The date and time when the user data was last updated',
+    example: '2025-01-15T08:21:45.123Z',
+  })
+  updatedAt: Date;
 }

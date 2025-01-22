@@ -36,4 +36,16 @@ export class SetEntity implements Set {
     nullable: true,
   })
   exerciseId: string | null;
+
+  @ApiProperty({
+    description: 'The date and time when the set was created',
+    example: '2025-01-01T12:34:56.789Z',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'The date and time when the set data was last updated',
+    example: '2025-01-15T08:21:45.123Z',
+  })
+  updatedAt: Date;
 }

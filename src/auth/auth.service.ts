@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
 import { compareValueWithHash, encrypt } from '../utils/bcrypt';
@@ -15,6 +16,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async login(user: UserEntity, response: Response) {
@@ -62,13 +64,13 @@ export class AuthService {
     const expireAccessToken = new Date();
     expireAccessToken.setTime(
       expireAccessToken.getTime() +
-        parseInt(process.env.JWT_ACCESS_TOKEN_EXPIRATION_MS),
+        parseInt(this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_MS')),
     );
 
     const expireRefreshToken = new Date();
     expireRefreshToken.setTime(
       expireRefreshToken.getTime() +
-        parseInt(process.env.JWT_REFRESH_TOKEN_EXPIRATION_MS),
+        parseInt(this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_MS')),
     );
 
     const tokenPayload: TokenPayload = {
@@ -76,13 +78,13 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(tokenPayload, {
-      secret: process.env.JWT_ACCESS_TOKEN_SECRET,
-      expiresIn: `${process.env.JWT_ACCESS_TOKEN_EXPIRATION_MS}ms`,
+      secret: this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
+      expiresIn: `${this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_MS')}ms`,
     });
 
     const refreshToken = this.jwtService.sign(tokenPayload, {
-      secret: process.env.JWT_REFRESH_TOKEN_SECRET,
-      expiresIn: `${process.env.JWT_REFRESH_TOKEN_EXPIRATION_MS}ms`,
+      secret: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
+      expiresIn: `${this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_MS')}ms`,
     });
 
     return { expireAccessToken, expireRefreshToken, accessToken, refreshToken };

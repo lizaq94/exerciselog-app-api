@@ -1,13 +1,13 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
 import { compareValueWithHash, encrypt } from '../utils/bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import * as process from 'node:process';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
+import jwtConfig from './config/jwt.config';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +16,8 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
   ) {}
 
   async login(user: UserEntity, response: Response) {
@@ -64,13 +65,13 @@ export class AuthService {
     const expireAccessToken = new Date();
     expireAccessToken.setTime(
       expireAccessToken.getTime() +
-        parseInt(this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_MS')),
+        parseInt(this.jwtConfiguration.jwtAccessTokenExpiration),
     );
 
     const expireRefreshToken = new Date();
     expireRefreshToken.setTime(
       expireRefreshToken.getTime() +
-        parseInt(this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_MS')),
+        parseInt(this.jwtConfiguration.jwtRefreshTokenExpiration),
     );
 
     const tokenPayload: TokenPayload = {
@@ -78,13 +79,13 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(tokenPayload, {
-      secret: this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
-      expiresIn: `${this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_MS')}ms`,
+      secret: this.jwtConfiguration.jwtAccessTokenSecret,
+      expiresIn: `${this.jwtConfiguration.jwtAccessTokenExpiration}ms`,
     });
 
     const refreshToken = this.jwtService.sign(tokenPayload, {
-      secret: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
-      expiresIn: `${this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_MS')}ms`,
+      secret: this.jwtConfiguration.jwtRefreshTokenSecret,
+      expiresIn: `${this.jwtConfiguration.jwtRefreshTokenExpiration}ms`,
     });
 
     return { expireAccessToken, expireRefreshToken, accessToken, refreshToken };

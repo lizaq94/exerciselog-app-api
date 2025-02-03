@@ -11,6 +11,7 @@ import {
   PrismaClientUnknownRequestError,
 } from '@prisma/client/runtime/library';
 import { Request, Response } from 'express';
+import { LoggerService } from '../../logger/logger.service';
 
 type ResponseObject = {
   statusCode: number;
@@ -20,7 +21,9 @@ type ResponseObject = {
 };
 
 @Catch()
-export class AllExceptionFilter extends BaseExceptionFilter {
+export class AllExceptionsFilter extends BaseExceptionFilter {
+  private readonly logger = new LoggerService(AllExceptionsFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -48,6 +51,8 @@ export class AllExceptionFilter extends BaseExceptionFilter {
     }
 
     response.status(responseObject.statusCode).json(responseObject);
+
+    this.logger.error(responseObject.response, AllExceptionsFilter.name);
 
     super.catch(exception, host);
   }

@@ -3,7 +3,7 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
-import { AllExceptionFilter } from './common/filters/all-exception.filter';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,7 +20,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalFilters(new AllExceptionFilter(httpAdapter));
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
   await app.listen(3000);
 }
 bootstrap();

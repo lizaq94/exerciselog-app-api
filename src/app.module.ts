@@ -12,6 +12,7 @@ import { UsersModule } from './users/users.module';
 import { WorkoutsModule } from './workouts/workouts.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { LoggerModule } from './logger/logger.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -34,6 +35,7 @@ const ENV = process.env.NODE_ENV;
     UsersModule,
     AuthModule,
     CaslModule,
+    LoggerModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

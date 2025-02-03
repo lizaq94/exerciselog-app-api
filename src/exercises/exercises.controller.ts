@@ -27,12 +27,16 @@ import { SetEntity } from '../sets/entities/set.entity';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { ExerciseEntity } from './entities/exercise.entity';
 import { ExercisesService } from './exercises.service';
+import { LoggerService } from '../logger/logger.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('exercises')
 @ApiTags('exercises')
 export class ExercisesController {
-  constructor(private exerciseService: ExercisesService) {}
+  constructor(
+    private exerciseService: ExercisesService,
+    private logger: LoggerService,
+  ) {}
 
   @Get(':id')
   @ApiOperation({ summary: 'Retrieve an exercise by its unique identifier' })
@@ -46,6 +50,7 @@ export class ExercisesController {
     type: ExerciseEntity,
   })
   findOne(@Param('id') id: string) {
+    this.logger.log(`Fetching exercise with ID: ${id}`, 'ExercisesController');
     return this.exerciseService.findOne(id);
   }
 
@@ -70,6 +75,7 @@ export class ExercisesController {
     @Param('id') id: string,
     @Body() updateExerciseDto: UpdateExerciseDto,
   ) {
+    this.logger.log(`Updating exercise with ID: ${id}`, 'ExercisesController');
     return this.exerciseService.update(id, updateExerciseDto);
   }
 
@@ -87,6 +93,10 @@ export class ExercisesController {
     description: 'Exercise deleted successfully. No content returned.',
   })
   delete(@Param('id') id: string) {
+    this.logger.error(
+      `Deleting exercise with ID: ${id}`,
+      'ExercisesController',
+    );
     return this.exerciseService.delete(id);
   }
 

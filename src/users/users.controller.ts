@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { LoggerService } from '../logger/logger.service';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { WorkoutEntity } from '../workouts/entities/workout.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -29,7 +30,10 @@ import { UsersService } from './users.service';
 @Controller('users')
 @ApiTags('users')
 export class UsersController {
-  constructor(private readonly userService: UsersService) {}
+  constructor(
+    private readonly userService: UsersService,
+    private logger: LoggerService,
+  ) {}
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
@@ -44,6 +48,7 @@ export class UsersController {
     description: 'Returns a user entity based on the ID provided',
   })
   findOne(@Param('id') id: string) {
+    this.logger.log(`Fetching user with ID: ${id}`, UsersController.name);
     return this.userService.findOneById(id);
   }
 
@@ -67,6 +72,7 @@ export class UsersController {
     description: 'Creates a new user and returns the created user entity',
   })
   create(@Body() createUserDto: CreateUserDto) {
+    this.logger.log(`Adding new user`, UsersController.name);
     return this.userService.create(createUserDto);
   }
 
@@ -94,6 +100,7 @@ export class UsersController {
     description: 'Updates a user and returns the updated user entity',
   })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    this.logger.log(`Updating user with ID: ${id}`, UsersController.name);
     return this.userService.update(id, updateUserDto);
   }
 
@@ -110,6 +117,7 @@ export class UsersController {
     description: 'User deleted successfully. No content returned.',
   })
   delete(@Param('id') id: string) {
+    this.logger.error(`Deleting user with ID: ${id}`, UsersController.name);
     return this.userService.delete(id);
   }
 
@@ -128,6 +136,10 @@ export class UsersController {
   })
   @Get(':id/workouts')
   findAllWorkouts(@Param('id') id: string) {
+    this.logger.log(
+      `Retrieving workouts for user ID: ${id}`,
+      UsersController.name,
+    );
     return this.userService.findAllWorkouts(id);
   }
 
@@ -162,6 +174,10 @@ export class UsersController {
     @Param('id') id: string,
     @Body() createWorkoutDto: CreateWorkoutDto,
   ) {
+    this.logger.log(
+      `Adding new workout for user ID: ${id}`,
+      UsersController.name,
+    );
     return this.userService.addWorkout(id, createWorkoutDto);
   }
 }

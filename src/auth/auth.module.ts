@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { LoggerModule } from '../logger/logger.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -16,6 +17,7 @@ import jwtConfig from './config/jwt.config';
     PassportModule,
     JwtModule,
     ConfigModule.forFeature(jwtConfig),
+    LoggerModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, JwtRefreshStrategy],

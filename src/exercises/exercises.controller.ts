@@ -50,7 +50,10 @@ export class ExercisesController {
     type: ExerciseEntity,
   })
   findOne(@Param('id') id: string) {
-    this.logger.log(`Fetching exercise with ID: ${id}`, 'ExercisesController');
+    this.logger.log(
+      `Fetching exercise with ID: ${id}`,
+      ExercisesController.name,
+    );
     return this.exerciseService.findOne(id);
   }
 
@@ -75,7 +78,10 @@ export class ExercisesController {
     @Param('id') id: string,
     @Body() updateExerciseDto: UpdateExerciseDto,
   ) {
-    this.logger.log(`Updating exercise with ID: ${id}`, 'ExercisesController');
+    this.logger.log(
+      `Updating exercise with ID: ${id}`,
+      ExercisesController.name,
+    );
     return this.exerciseService.update(id, updateExerciseDto);
   }
 
@@ -95,7 +101,7 @@ export class ExercisesController {
   delete(@Param('id') id: string) {
     this.logger.error(
       `Deleting exercise with ID: ${id}`,
-      'ExercisesController',
+      ExercisesController.name,
     );
     return this.exerciseService.delete(id);
   }
@@ -113,6 +119,10 @@ export class ExercisesController {
     isArray: true,
   })
   findAllSets(@Param('id') id: string) {
+    this.logger.log(
+      `Retrieving sets for exercise ID: ${id}`,
+      ExercisesController.name,
+    );
     return this.exerciseService.findAllSets(id);
   }
 
@@ -134,6 +144,10 @@ export class ExercisesController {
     type: SetEntity,
   })
   addSet(@Param('id') id: string, @Body() createSetDto: CreateSetDto) {
+    this.logger.log(
+      `Adding new set to exercise ID: ${id}`,
+      ExercisesController.name,
+    );
     return this.exerciseService.addSet(id, createSetDto);
   }
 }

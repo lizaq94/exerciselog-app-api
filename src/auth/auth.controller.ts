@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBody, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -8,11 +15,15 @@ import { CurrentUser } from './current-user.decorator';
 import { LoginInDto } from './dto/sign-in.dto';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { LoggerService } from '../logger/logger.service';
 
 @Controller('auth')
 @ApiTags('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly logger: LoggerService,
+  ) {}
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
@@ -37,6 +48,7 @@ export class AuthController {
     @CurrentUser() user: UserEntity,
     @Res({ passthrough: true }) response: Response,
   ) {
+    this.logger.log(`User login attempt: ${user.id}`, AuthController.name);
     return this.authService.login(user, response);
   }
 
@@ -56,13 +68,15 @@ export class AuthController {
     },
   })
   @ApiResponse({
-    description: 'User successfully registered and token returned.',
+    status: 201,
+    description: 'User successfully registered.',
     type: UserEntity,
   })
   async signUp(
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) response: Response,
   ) {
+    this.logger.log(`User registration attempt`, AuthController.name);
     return this.authService.signup(createUserDto, response);
   }
 
@@ -77,6 +91,10 @@ export class AuthController {
     @CurrentUser() user: UserEntity,
     @Res({ passthrough: true }) response: Response,
   ) {
+    this.logger.log(
+      `Refreshing access token for user: ${user.id}`,
+      AuthController.name,
+    );
     return this.authService.login(user, response);
   }
 
@@ -86,10 +104,12 @@ export class AuthController {
   @ApiResponse({
     description: 'User successfully logged out.',
   })
+  @HttpCode(204)
   async logout(
     @CurrentUser() user: UserEntity,
     @Res({ passthrough: true }) response: Response,
   ) {
+    this.logger.log(`User logout: ${user.id}`, AuthController.name);
     return this.authService.logout(user, response);
   }
 }

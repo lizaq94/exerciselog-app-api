@@ -24,15 +24,20 @@ import { OwnershipGuard } from '../casl/guards/ownership.guard';
 import { Resource } from '../casl/types/resource.type';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { ExerciseEntity } from '../exercises/entities/exercise.entity';
+import { LoggerService } from '../logger/logger.service';
 import { UpdateWorkoutDto } from './dto/update-workout.dto';
 import { WorkoutEntity } from './entities/workout.entity';
+import { WorkoutsModule } from './workouts.module';
 import { WorkoutsService } from './workouts.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')
 @ApiTags('workouts')
 export class WorkoutsController {
-  constructor(private readonly workoutService: WorkoutsService) {}
+  constructor(
+    private readonly workoutService: WorkoutsService,
+    private logger: LoggerService,
+  ) {}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get workout by its unique ID' })
@@ -46,6 +51,7 @@ export class WorkoutsController {
     type: WorkoutEntity,
   })
   findOne(@Param('id') id: string) {
+    this.logger.log(`Fetching workout with ID: ${id}`, WorkoutsController.name);
     return this.workoutService.findOne(id);
   }
 
@@ -67,6 +73,7 @@ export class WorkoutsController {
     type: WorkoutEntity,
   })
   update(@Param('id') id: string, @Body() updateWorkoutsDto: UpdateWorkoutDto) {
+    this.logger.log(`Updating workout with ID: ${id}`, WorkoutsController.name);
     return this.workoutService.update(id, updateWorkoutsDto);
   }
 
@@ -84,6 +91,10 @@ export class WorkoutsController {
     description: 'Workout deleted successfully. No content returned.',
   })
   delete(@Param('id') id: string) {
+    this.logger.error(
+      `Deleting workout with ID: ${id}`,
+      WorkoutsController.name,
+    );
     return this.workoutService.delete(id);
   }
 
@@ -100,6 +111,10 @@ export class WorkoutsController {
     isArray: true,
   })
   findAllExercise(@Param('id') id: string) {
+    this.logger.log(
+      `Retrieving exercises for workout ID: ${id}`,
+      WorkoutsController.name,
+    );
     return this.workoutService.findAllExercise(id);
   }
 
@@ -124,6 +139,10 @@ export class WorkoutsController {
     @Param('id') id: string,
     @Body() createExerciseDto: CreateExerciseDto,
   ) {
+    this.logger.log(
+      `Adding new exercise to workut ID: ${id}`,
+      WorkoutsController.name,
+    );
     return this.workoutService.addExercise(id, createExerciseDto);
   }
 }

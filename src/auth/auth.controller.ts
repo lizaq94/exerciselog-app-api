@@ -12,7 +12,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UserEntity } from '../users/entities/user.entity';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
-import { LoginInDto } from './dto/sign-in.dto';
+import { SignInDto } from './dto/sign-in.dto';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { LoggerService } from '../logger/logger.service';
@@ -29,7 +29,7 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'User login' })
   @ApiBody({
-    type: LoginInDto,
+    type: SignInDto,
     description: 'User login credentials',
     examples: {
       example1: {

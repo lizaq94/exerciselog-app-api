@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PaginationModule } from '../common/pagination/pagination.module';
 import { LoggerModule } from '../logger/logger.module';
 import { WorkoutsModule } from '../workouts/workouts.module';
 import { UsersController } from './users.controller';

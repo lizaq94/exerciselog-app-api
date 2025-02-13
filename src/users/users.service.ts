@@ -1,11 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
 import { DatabaseService } from '../database/database.service';
 import { encrypt } from '../utils/bcrypt';
-import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
+import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
+import { Request } from 'express';
 
 @Injectable()
 export class UsersService {
@@ -85,9 +87,13 @@ export class UsersService {
     this.databaseService.user.delete({ where: { id } });
   }
 
-  async findAllWorkouts(id: string) {
+  async findAllWorkouts(
+    id: string,
+    pagination: PaginationQueryDto,
+    request: Request,
+  ) {
     await this.findOneById(id);
-    return this.workoutService.findAll(id);
+    return this.workoutService.findAll(id, pagination, request);
   }
 
   async addWorkout(id: string, createWorkoutDto: CreateWorkoutDto) {

@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CaslModule } from './casl/casl.module';
+import { PaginationModule } from './common/pagination/pagination.module';
 import { DatabaseModule } from './database/database.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { SetsModule } from './sets/sets.module';
@@ -36,6 +37,7 @@ const ENV = process.env.NODE_ENV;
     AuthModule,
     CaslModule,
     LoggerModule,
+    PaginationModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

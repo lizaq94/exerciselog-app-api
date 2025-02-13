@@ -1,23 +1,56 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
+import { PaginatedResult } from '../common/pagination/interfeces/paginated.intefece';
+import { PaginationProvider } from '../common/pagination/pagination.provider';
 import { DatabaseService } from '../database/database.service';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
-import { CreateWorkoutDto } from './dto/create-workout.dto';
-import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { CreateWorkoutDto } from './dtos/create-workout.dto';
+import { UpdateWorkoutDto } from './dtos/update-workout.dto';
 import { ExercisesService } from '../exercises/exercises.service';
 import { WorkoutEntity } from './entities/workout.entity';
+import { PaginatorTypes, paginator } from '@nodeteam/nestjs-prisma-pagination';
+import { Request } from 'express';
+
+const paginate: PaginatorTypes.PaginateFunction = paginator({
+  page: 1,
+  perPage: 10,
+});
 
 @Injectable()
 export class WorkoutsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly exercisesService: ExercisesService,
+    private readonly paginationProvider: PaginationProvider,
   ) {}
 
-  public async findAll(userId: string): Promise<WorkoutEntity[]> {
-    return this.databaseService.workout.findMany({
-      where: { userId },
-      include: { exercises: true },
-    });
+  public async findAll(
+    userId: string,
+    pagination: PaginationQueryDto,
+    request: Request,
+  ): Promise<PaginatedResult<WorkoutEntity>> {
+    const result: PaginatorTypes.PaginatedResult<WorkoutEntity> =
+      await paginate(
+        this.databaseService.workout,
+        {
+          where: { userId },
+          include: { exercises: true },
+        },
+        {
+          page: pagination.page,
+          perPage: pagination.limit,
+        },
+      );
+
+    return {
+      ...result,
+      links: this.paginationProvider.generatePaginationLinks(
+        request,
+        result.meta.lastPage,
+        pagination.page,
+        pagination.limit,
+      ),
+    };
   }
 
   public async findOne(id: string): Promise<WorkoutEntity> {

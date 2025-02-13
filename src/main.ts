@@ -19,7 +19,16 @@ async function bootstrap() {
   const { httpAdapter } = app.get(HttpAdapterHost);
   SwaggerModule.setup('api', app, document);
   app.use(cookieParser());
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
   await app.listen(3000);
 }

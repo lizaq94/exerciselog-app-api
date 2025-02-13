@@ -7,7 +7,9 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -20,12 +22,14 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LoggerService } from '../logger/logger.service';
-import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
+import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
+import { GetWorkoutsDto } from '../workouts/dtos/get-workouts.dto';
 import { WorkoutEntity } from '../workouts/entities/workout.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { Request as Req } from 'express';
 
 @Controller('users')
 @ApiTags('users')
@@ -135,12 +139,16 @@ export class UsersController {
     description: 'Returns a list of workouts associated with the user',
   })
   @Get(':id/workouts')
-  findAllWorkouts(@Param('id') id: string) {
+  findAllWorkouts(
+    @Param('id') id: string,
+    @Query() workoutsQuery: GetWorkoutsDto,
+    @Request() request: Req,
+  ) {
     this.logger.log(
       `Retrieving workouts for user ID: ${id}`,
       UsersController.name,
     );
-    return this.userService.findAllWorkouts(id);
+    return this.userService.findAllWorkouts(id, workoutsQuery, request);
   }
 
   @Post(':id/workouts')

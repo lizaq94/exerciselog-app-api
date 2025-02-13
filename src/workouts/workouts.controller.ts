@@ -25,9 +25,8 @@ import { Resource } from '../casl/types/resource.type';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { ExerciseEntity } from '../exercises/entities/exercise.entity';
 import { LoggerService } from '../logger/logger.service';
-import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { UpdateWorkoutDto } from './dtos/update-workout.dto';
 import { WorkoutEntity } from './entities/workout.entity';
-import { WorkoutsModule } from './workouts.module';
 import { WorkoutsService } from './workouts.service';
 
 @UseGuards(JwtAuthGuard)

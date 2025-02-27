@@ -2,12 +2,12 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
-import { compareValueWithHash, encrypt } from '../utils/bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
 import jwtConfig from './config/jwt.config';
+import { HashingProvider } from './providers/hashing.provider';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +18,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
+    private readonly hashingProvider: HashingProvider,
   ) {}
 
   async login(user: UserEntity, response: Response) {
@@ -100,7 +101,7 @@ export class AuthService {
     expireRefreshToken: Date,
   ) {
     await this.usersService.update(userId, {
-      refreshToken: await encrypt(refreshToken),
+      refreshToken: await this.hashingProvider.encrypt(refreshToken),
     });
 
     response.cookie(this.ACCESS_TOKEN_COOKIE, accessToken, {
@@ -124,7 +125,10 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     try {
       const user = await this.usersService.findOne(email);
-      const isAuthorized = await compareValueWithHash(password, user.password);
+      const isAuthorized = await this.hashingProvider.compareValueWithHash(
+        password,
+        user.password,
+      );
 
       if (!isAuthorized) {
         throw new UnauthorizedException();
@@ -139,7 +143,7 @@ export class AuthService {
   async verifyUserRefreshToken(refreshToken: string, userId: string) {
     try {
       const user = await this.usersService.findOneById(userId);
-      const authenticated = await compareValueWithHash(
+      const authenticated = await this.hashingProvider.compareValueWithHash(
         refreshToken,
         user.refreshToken,
       );

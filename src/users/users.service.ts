@@ -1,19 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
 import { DatabaseService } from '../database/database.service';
-import { encrypt } from '../utils/bcrypt';
 import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { Request } from 'express';
+import { HashingProvider } from '../auth/providers/hashing.provider';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly workoutService: WorkoutsService,
+    private readonly hashingProvider: HashingProvider,
   ) {}
 
   async findOne(
@@ -44,7 +45,7 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
-    const password = await encrypt(createUserDto.password);
+    const password = await this.hashingProvider.encrypt(createUserDto.password);
 
     return this.databaseService.user.create({
       data: {
@@ -64,7 +65,9 @@ export class UsersService {
     let data = updateUserDto;
 
     if (updateUserDto.password) {
-      const password = await encrypt(updateUserDto.password);
+      const password = await this.hashingProvider.encrypt(
+        updateUserDto.password,
+      );
 
       data = {
         ...updateUserDto,

@@ -10,6 +10,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { ConfigModule } from '@nestjs/config';
 import jwtConfig from './config/jwt.config';
+import { HashingProvider } from './providers/hashing.provider';
+import { BcryptProvider } from './providers/bcrypt.provider';
 
 @Module({
   imports: [
@@ -20,6 +22,16 @@ import jwtConfig from './config/jwt.config';
     LoggerModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, JwtRefreshStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    JwtRefreshStrategy,
+    {
+      provide: HashingProvider,
+      useClass: BcryptProvider,
+    },
+  ],
+  exports: [HashingProvider],
 })
 export class AuthModule {}

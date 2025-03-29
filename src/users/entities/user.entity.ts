@@ -1,6 +1,7 @@
 import { User } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { WorkoutEntity } from '../../workouts/entities/workout.entity';
+import { Exclude } from 'class-transformer';
 
 export class UserEntity implements User {
   @ApiProperty({
@@ -21,19 +22,10 @@ export class UserEntity implements User {
   })
   email: string;
 
-  @ApiProperty({
-    description: 'The hashed password of the user',
-    example: 'Str0ngP@ssw0rd!',
-  })
+  @Exclude()
   password: string;
 
-  @ApiProperty({
-    description:
-      'The refresh token used to maintain the user session (optional)',
-    example:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SGslTjOS_vw',
-    required: false,
-  })
+  @Exclude()
   refreshToken: string;
 
   @ApiProperty({

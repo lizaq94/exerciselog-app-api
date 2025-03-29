@@ -10,6 +10,8 @@ import {
   Query,
   UseGuards,
   Request,
+  ClassSerializerInterceptor,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -51,6 +53,7 @@ export class UsersController {
     type: UserEntity,
     description: 'Returns a user entity based on the ID provided',
   })
+  @UseInterceptors(ClassSerializerInterceptor)
   findOne(@Param('id') id: string) {
     this.logger.log(`Fetching user with ID: ${id}`, UsersController.name);
     return this.userService.findOneById(id);
@@ -75,6 +78,7 @@ export class UsersController {
     type: UserEntity,
     description: 'Creates a new user and returns the created user entity',
   })
+  @UseInterceptors(ClassSerializerInterceptor)
   create(@Body() createUserDto: CreateUserDto) {
     this.logger.log(`Adding new user`, UsersController.name);
     return this.userService.create(createUserDto);
@@ -103,6 +107,7 @@ export class UsersController {
     type: UserEntity,
     description: 'Updates a user and returns the updated user entity',
   })
+  @UseInterceptors(ClassSerializerInterceptor)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     this.logger.log(`Updating user with ID: ${id}`, UsersController.name);
     return this.userService.update(id, updateUserDto);

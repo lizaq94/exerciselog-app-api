@@ -8,6 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { Request } from 'express';
 import { HashingProvider } from '../auth/providers/hashing.provider';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UsersService {
@@ -28,7 +29,7 @@ export class UsersService {
 
     if (!user && throwError) throw new NotFoundException('User not found');
 
-    return user;
+    return plainToInstance(UserEntity, user);
   }
 
   async findOneById(id: string): Promise<UserEntity> {
@@ -41,18 +42,19 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
 
-    return user;
+    return plainToInstance(UserEntity, user);
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const password = await this.hashingProvider.encrypt(createUserDto.password);
-
-    return this.databaseService.user.create({
+    const user = this.databaseService.user.create({
       data: {
         ...createUserDto,
         password,
       },
     });
+
+    return plainToInstance(UserEntity, user);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
@@ -75,10 +77,12 @@ export class UsersService {
       };
     }
 
-    return this.databaseService.user.update({
+    const updatedUser = this.databaseService.user.update({
       where: { id },
       data,
     });
+
+    return plainToInstance(UserEntity, updatedUser);
   }
 
   async delete(id: string): Promise<void> {

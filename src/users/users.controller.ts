@@ -32,6 +32,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { Request as Req } from 'express';
+import { DataResponseDto } from '../common/interceptors/data-response/data-response.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -50,7 +52,7 @@ export class UsersController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
-    type: UserEntity,
+    type: UserResponseDto,
     description: 'Returns a user entity based on the ID provided',
   })
   @UseInterceptors(ClassSerializerInterceptor)
@@ -75,7 +77,7 @@ export class UsersController {
     },
   })
   @ApiCreatedResponse({
-    type: UserEntity,
+    type: UserResponseDto,
     description: 'Creates a new user and returns the created user entity',
   })
   @UseInterceptors(ClassSerializerInterceptor)
@@ -104,7 +106,7 @@ export class UsersController {
     },
   })
   @ApiOkResponse({
-    type: UserEntity,
+    type: UserResponseDto,
     description: 'Updates a user and returns the updated user entity',
   })
   @UseInterceptors(ClassSerializerInterceptor)

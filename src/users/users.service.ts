@@ -29,7 +29,7 @@ export class UsersService {
 
     if (!user && throwError) throw new NotFoundException('User not found');
 
-    return plainToInstance(UserEntity, user);
+    return user;
   }
 
   async findOneById(id: string): Promise<UserEntity> {

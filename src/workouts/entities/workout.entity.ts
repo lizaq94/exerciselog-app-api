@@ -29,7 +29,7 @@ export class WorkoutEntity implements Workout {
 
   @ApiProperty({
     description: 'Duration of the workout in minutes',
-    example: 45,
+    example: 60,
   })
   duration: number;
 

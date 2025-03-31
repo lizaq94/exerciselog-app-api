@@ -26,8 +26,10 @@ import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { ExerciseEntity } from '../exercises/entities/exercise.entity';
 import { LoggerService } from '../logger/logger.service';
 import { UpdateWorkoutDto } from './dtos/update-workout.dto';
-import { WorkoutEntity } from './entities/workout.entity';
 import { WorkoutsService } from './workouts.service';
+import { WorkoutResponseDto } from './dtos/workout-response.dto';
+import { ExercisesResponseDto } from '../exercises/dto/exercises-response.dto';
+import { ExerciseResponseDto } from '../exercises/dto/exercise-response.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')
@@ -47,7 +49,7 @@ export class WorkoutsController {
   })
   @ApiOkResponse({
     description: 'Returns the workout matching the provided ID',
-    type: WorkoutEntity,
+    type: WorkoutResponseDto,
   })
   findOne(@Param('id') id: string) {
     this.logger.log(`Fetching workout with ID: ${id}`, WorkoutsController.name);
@@ -69,7 +71,7 @@ export class WorkoutsController {
   })
   @ApiOkResponse({
     description: 'Returns the updated workout entity',
-    type: WorkoutEntity,
+    type: WorkoutResponseDto,
   })
   update(@Param('id') id: string, @Body() updateWorkoutsDto: UpdateWorkoutDto) {
     this.logger.log(`Updating workout with ID: ${id}`, WorkoutsController.name);
@@ -106,8 +108,7 @@ export class WorkoutsController {
   })
   @ApiOkResponse({
     description: 'Returns a list of exercises associated with the workout',
-    type: ExerciseEntity,
-    isArray: true,
+    type: ExercisesResponseDto,
   })
   findAllExercise(@Param('id') id: string) {
     this.logger.log(
@@ -132,7 +133,7 @@ export class WorkoutsController {
   })
   @ApiCreatedResponse({
     description: 'Returns the created exercise entity added to the workout',
-    type: ExerciseEntity,
+    type: ExerciseResponseDto,
   })
   addExercise(
     @Param('id') id: string,

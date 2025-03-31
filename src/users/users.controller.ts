@@ -1,5 +1,6 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -8,9 +9,8 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
   Request,
-  ClassSerializerInterceptor,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -26,14 +26,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LoggerService } from '../logger/logger.service';
 import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
 import { GetWorkoutsDto } from '../workouts/dtos/get-workouts.dto';
-import { WorkoutEntity } from '../workouts/entities/workout.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserEntity } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { Request as Req } from 'express';
-import { DataResponseDto } from '../common/interceptors/data-response/data-response.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { WorkoutResponseDto } from '../workouts/dtos/workout-response.dto';
+import { WorkoutsResponseDto } from '../workouts/dtos/workouts-response.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -141,8 +140,7 @@ export class UsersController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
-    type: WorkoutEntity,
-    isArray: true,
+    type: WorkoutsResponseDto,
     description: 'Returns a list of workouts associated with the user',
   })
   @Get(':id/workouts')
@@ -174,14 +172,14 @@ export class UsersController {
         value: {
           name: 'Morning Strength Training',
           date: '2023-10-21T10:00:00.000Z',
-          duration: 45,
+          duration: 60,
           notes: 'Focus on lower body exercises',
         },
       },
     },
   })
   @ApiCreatedResponse({
-    type: WorkoutEntity,
+    type: WorkoutResponseDto,
     description:
       'Adds a workout to a user and returns the created workout entity',
   })

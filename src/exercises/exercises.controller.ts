@@ -28,6 +28,9 @@ import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { ExerciseEntity } from './entities/exercise.entity';
 import { ExercisesService } from './exercises.service';
 import { LoggerService } from '../logger/logger.service';
+import { ExerciseResponseDto } from './dto/exercise-response.dto';
+import { SetsResponseDto } from '../sets/dto/sets-response.dto';
+import { SetResponseDto } from '../sets/dto/set-response.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('exercises')
@@ -47,7 +50,7 @@ export class ExercisesController {
   })
   @ApiOkResponse({
     description: 'Returns the exercise matching the provided ID',
-    type: ExerciseEntity,
+    type: ExerciseResponseDto,
   })
   findOne(@Param('id') id: string) {
     this.logger.log(
@@ -72,7 +75,7 @@ export class ExercisesController {
   })
   @ApiOkResponse({
     description: 'Returns the updated exercise entity',
-    type: ExerciseEntity,
+    type: ExerciseResponseDto,
   })
   update(
     @Param('id') id: string,
@@ -115,7 +118,7 @@ export class ExercisesController {
   })
   @ApiOkResponse({
     description: 'Returns an array of sets associated with the exercise',
-    type: SetEntity,
+    type: SetsResponseDto,
     isArray: true,
   })
   findAllSets(@Param('id') id: string) {
@@ -141,7 +144,7 @@ export class ExercisesController {
   })
   @ApiCreatedResponse({
     description: 'Returns the created set entity',
-    type: SetEntity,
+    type: SetResponseDto,
   })
   addSet(@Param('id') id: string, @Body() createSetDto: CreateSetDto) {
     this.logger.log(

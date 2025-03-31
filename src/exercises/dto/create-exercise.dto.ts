@@ -22,6 +22,7 @@ export class CreateExerciseDto {
 
   @ApiProperty({
     description: 'Optional notes about the exercise',
+    example: 'Focus on controlled movement',
     required: false,
   })
   @IsString()

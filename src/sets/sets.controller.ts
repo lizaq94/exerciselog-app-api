@@ -23,6 +23,7 @@ import { UpdateSetDto } from './dto/update-set.dto';
 import { SetsService } from './sets.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SetEntity } from './entities/set.entity';
+import { SetResponseDto } from './dto/set-response.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('sets')
@@ -42,7 +43,7 @@ export class SetsController {
   })
   @ApiOkResponse({
     description: 'Returns the set matching the provided ID',
-    type: SetEntity,
+    type: SetResponseDto,
   })
   findOne(@Param('id') id: string) {
     this.logger.log(`Fetching set with ID: ${id}`, SetsController.name);
@@ -64,7 +65,7 @@ export class SetsController {
   })
   @ApiOkResponse({
     description: 'Returns the updated set entity',
-    type: SetEntity,
+    type: SetResponseDto,
   })
   update(@Param('id') id: string, @Body() updateSetsDto: UpdateSetDto) {
     this.logger.log(`Updating set with ID: ${id}`, SetsController.name);

@@ -5,10 +5,13 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { DataResponseInterceptor } from './common/interceptors/data-response/data-response.interceptor';
+import { config } from 'aws-sdk';
+import { ConfigService } from '@nestjs/config';
+import * as process from 'node:process';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('Exerciselog')
     .setDescription(
       'API for managing exercise logs, including creating, updating, and retrieving workout sessions. Supports JWT-based authentication for secure access.',
@@ -16,7 +19,7 @@ async function bootstrap() {
     .setVersion('0.1')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
   const { httpAdapter } = app.get(HttpAdapterHost);
   SwaggerModule.setup('api', app, document);
   app.use(cookieParser());
@@ -32,6 +35,15 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
   app.useGlobalInterceptors(new DataResponseInterceptor());
+
+  config.update({
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+    region: process.env.AWS_REGION,
+  });
+
   await app.listen(3000);
 }
 bootstrap();

@@ -60,3 +60,18 @@ model Set {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+model Upload {
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(1024)
+  path       String   @db.VarChar(1024)
+  type       FileType @default(IMAGE)
+  mime       String   @db.VarChar(128)
+  size       Int
+  createDate DateTime @default(now())
+  updateDate DateTime @updatedAt
+}
+
+enum FileType {
+  IMAGE @map("image")
+}

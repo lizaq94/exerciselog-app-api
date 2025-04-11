@@ -28,11 +28,11 @@ model Workout {
   id        String     @id @default(uuid())
   name      String
   date      DateTime   @default(now())
-  notes     String
+  notes     String?
   duration  Float
   exercises Exercise[]
-  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String?
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -41,13 +41,14 @@ model Exercise {
   id        String   @id @default(uuid())
   workout   Workout? @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   workoutId String?
-  name      String   @unique
+  name      String
   order     Int
   type      String
-  notes     String
+  notes     String?
   sets      Set[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  image     Upload?
 }
 
 model Set {
@@ -68,6 +69,8 @@ model Upload {
   type       FileType @default(IMAGE)
   mime       String   @db.VarChar(128)
   size       Int
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+  exerciseId String   @unique
   createDate DateTime @default(now())
   updateDate DateTime @updatedAt
 }

@@ -15,7 +15,7 @@ export class UploadsService {
     private readonly uploadToAwsProvider: UploadToAwsProvider,
     private readonly databaseService: DatabaseService,
   ) {}
-  public async uploadImage(file: Express.Multer.File) {
+  public async uploadImage(file: Express.Multer.File, exerciseId: string) {
     if (
       !['image/jpeg', 'image/jpg', 'image/gif', 'image/png'].includes(
         file.mimetype,
@@ -35,7 +35,9 @@ export class UploadsService {
         size: file.size,
       };
 
-      return this.databaseService.upload.create({ data: uploadFile });
+      return this.databaseService.upload.create({
+        data: { ...uploadFile, exercise: { connect: { id: exerciseId } } },
+      });
     } catch (error) {
       throw new ConflictException(error);
     }

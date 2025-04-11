@@ -7,11 +7,15 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
+  ApiHeaders,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -23,14 +27,15 @@ import { ResourceType } from '../casl/decorators/resource-type.decorator';
 import { OwnershipGuard } from '../casl/guards/ownership.guard';
 import { Resource } from '../casl/types/resource.type';
 import { CreateSetDto } from '../sets/dto/create-set.dto';
-import { SetEntity } from '../sets/entities/set.entity';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
-import { ExerciseEntity } from './entities/exercise.entity';
 import { ExercisesService } from './exercises.service';
 import { LoggerService } from '../logger/logger.service';
 import { ExerciseResponseDto } from './dto/exercise-response.dto';
 import { SetsResponseDto } from '../sets/dto/sets-response.dto';
 import { SetResponseDto } from '../sets/dto/set-response.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
+import { UploadsService } from '../uploads/providers/uploads.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('exercises')
@@ -38,6 +43,7 @@ import { SetResponseDto } from '../sets/dto/set-response.dto';
 export class ExercisesController {
   constructor(
     private exerciseService: ExercisesService,
+    private uploadsService: UploadsService,
     private logger: LoggerService,
   ) {}
 
@@ -152,5 +158,29 @@ export class ExercisesController {
       ExercisesController.name,
     );
     return this.exerciseService.addSet(id, createSetDto);
+  }
+
+  @UseInterceptors(FileInterceptor('image'))
+  @UseGuards(OwnershipGuard)
+  @ResourceType(Resource.EXERCISE)
+  @ApiOperation({ summary: 'Upload a new image for exercise' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @Post(':id/image')
+  public uploadImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.uploadsService.uploadImage(file, id);
   }
 }

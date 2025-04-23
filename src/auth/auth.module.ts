@@ -12,6 +12,7 @@ import { ConfigModule } from '@nestjs/config';
 import jwtConfig from './config/jwt.config';
 import { HashingProvider } from './providers/hashing.provider';
 import { BcryptProvider } from './providers/bcrypt.provider';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BcryptProvider } from './providers/bcrypt.provider';
     JwtModule,
     ConfigModule.forFeature(jwtConfig),
     LoggerModule,
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [

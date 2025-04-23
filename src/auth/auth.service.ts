@@ -1,4 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  RequestTimeoutException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
@@ -8,6 +13,7 @@ import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
 import jwtConfig from './config/jwt.config';
 import { HashingProvider } from './providers/hashing.provider';
+import { MailService } from '../mail/provider/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +25,7 @@ export class AuthService {
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly hashingProvider: HashingProvider,
+    private readonly mailService: MailService,
   ) {}
 
   async login(user: UserEntity, response: Response) {
@@ -55,6 +62,12 @@ export class AuthService {
       expireAccessToken,
       expireRefreshToken,
     );
+
+    try {
+      await this.mailService.sendUserWelcome(newUser);
+    } catch (error) {
+      throw new RequestTimeoutException(error);
+    }
   }
 
   async logout(user: UserEntity, response: Response) {

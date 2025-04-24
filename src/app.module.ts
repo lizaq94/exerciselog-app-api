@@ -16,14 +16,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from './logger/logger.module';
 import { UploadsModule } from './uploads/uploads.module';
 
-const ENV = process.env.NODE_ENV;
-
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: !ENV ? '.env' : `.env.${ENV}`,
-    }),
+    ConfigModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

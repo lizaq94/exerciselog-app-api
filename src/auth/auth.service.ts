@@ -1,19 +1,17 @@
 import {
-  Inject,
   Injectable,
   RequestTimeoutException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
-import jwtConfig from './config/jwt.config';
 import { HashingProvider } from './providers/hashing.provider';
 import { MailService } from '../mail/provider/mail.service';
+import { ConfigService } from '../config/config.service';
 
 @Injectable()
 export class AuthService {
@@ -22,8 +20,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
+    private readonly configService: ConfigService,
     private readonly hashingProvider: HashingProvider,
     private readonly mailService: MailService,
   ) {}
@@ -76,16 +73,18 @@ export class AuthService {
   }
 
   private generateTokens(userId: string) {
+    const authConfig = this.configService.getAuthConfig();
+
     const expireAccessToken = new Date();
     expireAccessToken.setTime(
       expireAccessToken.getTime() +
-        parseInt(this.jwtConfiguration.jwtAccessTokenExpiration),
+        parseInt(authConfig.jwtAccessTokenExpiration),
     );
 
     const expireRefreshToken = new Date();
     expireRefreshToken.setTime(
       expireRefreshToken.getTime() +
-        parseInt(this.jwtConfiguration.jwtRefreshTokenExpiration),
+        parseInt(authConfig.jwtRefreshTokenExpiration),
     );
 
     const tokenPayload: TokenPayload = {
@@ -93,13 +92,13 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(tokenPayload, {
-      secret: this.jwtConfiguration.jwtAccessTokenSecret,
-      expiresIn: `${this.jwtConfiguration.jwtAccessTokenExpiration}ms`,
+      secret: authConfig.jwtAccessTokenSecret,
+      expiresIn: `${authConfig.jwtAccessTokenExpiration}ms`,
     });
 
     const refreshToken = this.jwtService.sign(tokenPayload, {
-      secret: this.jwtConfiguration.jwtRefreshTokenSecret,
-      expiresIn: `${this.jwtConfiguration.jwtRefreshTokenExpiration}ms`,
+      secret: authConfig.jwtRefreshTokenSecret,
+      expiresIn: `${authConfig.jwtRefreshTokenExpiration}ms`,
     });
 
     return { expireAccessToken, expireRefreshToken, accessToken, refreshToken };

@@ -8,18 +8,17 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { ConfigModule } from '@nestjs/config';
-import jwtConfig from './config/jwt.config';
 import { HashingProvider } from './providers/hashing.provider';
 import { BcryptProvider } from './providers/bcrypt.provider';
 import { MailModule } from '../mail/mail.module';
+import { ConfigModule } from '../config/config.module';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
     JwtModule,
-    ConfigModule.forFeature(jwtConfig),
+    ConfigModule,
     LoggerModule,
     MailModule,
   ],

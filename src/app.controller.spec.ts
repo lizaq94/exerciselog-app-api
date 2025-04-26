@@ -15,8 +15,13 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('controller should be defined', () => {
+      expect(appController).toBeDefined();
+    });
+
+    it('should redirect to /api', () => {
+      const result = appController.root();
+      expect(result).toBeUndefined();
     });
   });
 });

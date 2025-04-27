@@ -23,7 +23,6 @@ import { ResourceType } from '../casl/decorators/resource-type.decorator';
 import { OwnershipGuard } from '../casl/guards/ownership.guard';
 import { Resource } from '../casl/types/resource.type';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
-import { ExerciseEntity } from '../exercises/entities/exercise.entity';
 import { LoggerService } from '../logger/logger.service';
 import { UpdateWorkoutDto } from './dtos/update-workout.dto';
 import { WorkoutsService } from './workouts.service';

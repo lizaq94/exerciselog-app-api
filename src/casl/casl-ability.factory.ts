@@ -43,6 +43,7 @@ export class CaslAbilityFactory {
         subject: ExerciseEntity,
         conditions: { workoutId: { in: allUserWorkoutIds } },
       },
+
       {
         action: Action.Manage,
         subject: SetEntity,

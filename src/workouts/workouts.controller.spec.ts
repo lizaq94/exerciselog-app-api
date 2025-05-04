@@ -1,17 +1,12 @@
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ModuleRef, Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Action, CaslAbilityFactory } from '../casl/casl-ability.factory';
+import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { Resource } from '../casl/types/resource.type';
+import { LoggerService } from '../logger/logger.service';
 import { WorkoutsController } from './workouts.controller';
 import { WorkoutsService } from './workouts.service';
-import { LoggerService } from '../logger/logger.service';
-import { Action, CaslAbilityFactory } from '../casl/casl-ability.factory';
-import {
-  BadRequestException,
-  ExecutionContext,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
-import { OwnershipGuard } from '../casl/guards/ownership.guard';
-import { ModuleRef, Reflector } from '@nestjs/core';
-import { Resource } from '../casl/types/resource.type';
 
 const mockCaslAbilityFactory = {
   createForUser: jest.fn(),
@@ -212,7 +207,108 @@ describe('WorkoutsController', () => {
       );
       expect(mockModuleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
     });
+  });
 
-    //it('should return updated workout object with correct properties')
+  describe.only('delete', () => {
+    it('should successfully delete workout when valid ID is provided', async () => {
+      (workoutsService.delete as jest.Mock).mockResolvedValueOnce(undefined);
+
+      const result = await controller.delete(workoutId);
+      expect(workoutsService.delete).toHaveBeenCalledWith(workoutId);
+      expect(result).toBeUndefined();
+    });
+    it('should throw NotFoundException when trying to delete non-existing workout', async () => {
+      const nonExistingId = 'non-existing-id';
+
+      (workoutsService.delete as jest.Mock).mockRejectedValueOnce(
+        new NotFoundException(`Workout not found or has been deleted`),
+      );
+
+      await expect(controller.delete(nonExistingId)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(workoutsService.delete).toHaveBeenCalledWith(nonExistingId);
+    });
+    it('should throw ForbiddenException when user tries to delete workout owned by another user', async () => {
+      const testUser = {
+        id: 'user-1234',
+        workouts: [],
+      };
+
+      const anotherUserWorkout = {
+        id: workoutId,
+        name: 'Test Workout',
+        date: '2023-10-21T10:00:00.000Z',
+        userId: 'different-user-id',
+      };
+
+      const mockModuleRef = {
+        resolve: jest.fn().mockImplementation((service) => {
+          if (service === WorkoutsService) {
+            return Promise.resolve(mockWorkoutsService);
+          }
+          throw new Error(`Unexpected service: ${service}`);
+        }),
+      };
+
+      const mockAbility = {
+        can: jest.fn().mockReturnValue(false),
+      };
+
+      const caslAbilityFactory = {
+        defineAbility: jest.fn().mockReturnValue(mockAbility),
+      };
+
+      const mockExecutionContext = {
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({
+            user: testUser,
+            params: { id: workoutId },
+          }),
+        }),
+        getHandler: jest.fn(),
+      };
+
+      const mockReflector = new Reflector();
+      jest.spyOn(mockReflector, 'get').mockReturnValue(Resource.WORKOUT);
+
+      (mockWorkoutsService.findOne as jest.Mock).mockResolvedValue(
+        anotherUserWorkout,
+      );
+
+      const ownershipGuard = new OwnershipGuard(
+        mockReflector,
+        caslAbilityFactory,
+        mockModuleRef as unknown as ModuleRef,
+      );
+
+      await expect(async () => {
+        const canActivate = await ownershipGuard.canActivate(
+          mockExecutionContext as any,
+        );
+        if (!canActivate) {
+          throw new ForbiddenException('No permission to manage the resource.');
+        }
+        return controller.delete(workoutId);
+      }).rejects.toThrow(ForbiddenException);
+
+      expect(mockWorkoutsService.findOne).toHaveBeenCalledWith(workoutId);
+      expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
+      expect(mockAbility.can).toHaveBeenCalledWith(
+        Action.Manage,
+        expect.any(Object),
+      );
+      expect(mockModuleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
+    });
+    it('should log information when deleting workout\n', async () => {
+      (workoutsService.delete as jest.Mock).mockReturnValueOnce(undefined);
+
+      await controller.delete(workoutId);
+
+      expect(loggerService.log).toHaveBeenCalledWith(
+        `Deleting workout with ID: ${workoutId}`,
+        WorkoutsController.name,
+      );
+    });
   });
 });

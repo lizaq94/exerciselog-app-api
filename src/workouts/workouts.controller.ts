@@ -23,12 +23,12 @@ import { ResourceType } from '../casl/decorators/resource-type.decorator';
 import { OwnershipGuard } from '../casl/guards/ownership.guard';
 import { Resource } from '../casl/types/resource.type';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
+import { ExerciseResponseDto } from '../exercises/dto/exercise-response.dto';
+import { ExercisesResponseDto } from '../exercises/dto/exercises-response.dto';
 import { LoggerService } from '../logger/logger.service';
 import { UpdateWorkoutDto } from './dtos/update-workout.dto';
-import { WorkoutsService } from './workouts.service';
 import { WorkoutResponseDto } from './dtos/workout-response.dto';
-import { ExercisesResponseDto } from '../exercises/dto/exercises-response.dto';
-import { ExerciseResponseDto } from '../exercises/dto/exercise-response.dto';
+import { WorkoutsService } from './workouts.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')
@@ -91,10 +91,7 @@ export class WorkoutsController {
     description: 'Workout deleted successfully. No content returned.',
   })
   delete(@Param('id') id: string) {
-    this.logger.error(
-      `Deleting workout with ID: ${id}`,
-      WorkoutsController.name,
-    );
+    this.logger.log(`Deleting workout with ID: ${id}`, WorkoutsController.name);
     return this.workoutService.delete(id);
   }
 

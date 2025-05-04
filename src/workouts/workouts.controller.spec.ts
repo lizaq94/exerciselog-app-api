@@ -209,7 +209,7 @@ describe('WorkoutsController', () => {
     });
   });
 
-  describe.only('delete', () => {
+  describe('delete', () => {
     it('should successfully delete workout when valid ID is provided', async () => {
       (workoutsService.delete as jest.Mock).mockResolvedValueOnce(undefined);
 
@@ -309,6 +309,64 @@ describe('WorkoutsController', () => {
         `Deleting workout with ID: ${workoutId}`,
         WorkoutsController.name,
       );
+    });
+  });
+
+  describe('findAllExercise', () => {
+    const dummyExercise = [
+      {
+        id: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
+      },
+    ];
+    it('should return all exercises for given workout ID', async () => {
+      (workoutsService.findAllExercise as jest.Mock).mockReturnValueOnce(
+        dummyExercise,
+      );
+
+      const result = await controller.findAllExercise(workoutId);
+
+      expect(workoutsService.findAllExercise).toHaveBeenCalledWith(workoutId);
+      expect(result).toEqual(dummyExercise);
+    });
+    it('should throw NotFoundException when workout does not exist', async () => {
+      const nonExistingWorkoutId = 'non-existing-id';
+
+      (workoutsService.findAllExercise as jest.Mock).mockRejectedValue(
+        new NotFoundException('Workout not found'),
+      );
+
+      await expect(
+        controller.findAllExercise(nonExistingWorkoutId),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.findAllExercise(nonExistingWorkoutId),
+      ).rejects.toThrow('Workout not found');
+
+      expect(workoutsService.findAllExercise).toHaveBeenCalledWith(
+        nonExistingWorkoutId,
+      );
+    });
+    it('should log information about fetching exercises', async () => {
+      (workoutsService.findAllExercise as jest.Mock).mockReturnValueOnce(
+        dummyExercise,
+      );
+
+      await controller.findAllExercise(workoutId);
+
+      expect(loggerService.log).toHaveBeenCalledWith(
+        `Retrieving exercises for workout ID: ${workoutId}`,
+        WorkoutsController.name,
+      );
+    });
+    it('should return empty array when workout has no exercises', async () => {
+      (workoutsService.findAllExercise as jest.Mock).mockReturnValueOnce([]);
+
+      const result = await controller.findAllExercise(workoutId);
+
+      expect(workoutsService.findAllExercise).toHaveBeenCalledWith(workoutId);
+      expect(result).toEqual([]);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(0);
     });
   });
 });

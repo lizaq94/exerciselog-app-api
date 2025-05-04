@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Action, CaslAbilityFactory } from '../casl/casl-ability.factory';
@@ -300,7 +304,7 @@ describe('WorkoutsController', () => {
       );
       expect(mockModuleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
     });
-    it('should log information when deleting workout\n', async () => {
+    it('should log information when deleting workout', async () => {
       (workoutsService.delete as jest.Mock).mockReturnValueOnce(undefined);
 
       await controller.delete(workoutId);
@@ -367,6 +371,157 @@ describe('WorkoutsController', () => {
       expect(result).toEqual([]);
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(0);
+    });
+  });
+
+  describe('addExercise', () => {
+    const mockExercise = {
+      id: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
+      name: 'Bench Press',
+      order: 1,
+      type: 'Strength',
+      notes: 'Focus on controlled movement',
+      sets: [],
+      workoutId: workoutId,
+      createdAt: new Date('2025-01-01T12:34:56.789Z'),
+      updatedAt: new Date('2025-01-15T08:21:45.123Z'),
+    };
+
+    it('should successfully add exercise to workout', async () => {
+      (workoutsService.addExercise as jest.Mock).mockResolvedValue(
+        mockExercise,
+      );
+
+      const result = await controller.addExercise(workoutId, mockExercise);
+
+      expect(result).toEqual(mockExercise);
+      expect(workoutsService.addExercise).toHaveBeenCalledWith(
+        workoutId,
+        mockExercise,
+      );
+      expect(result.workoutId).toBe(workoutId);
+    });
+    it('should throw NotFoundException when trying to add exercise to non-existing workout', async () => {
+      const nonExistingWorkoutId = 'non-existing-id';
+
+      (workoutsService.addExercise as jest.Mock).mockRejectedValue(
+        new NotFoundException('Workout not found'),
+      );
+
+      await expect(
+        controller.addExercise(nonExistingWorkoutId, mockExercise),
+      ).rejects.toThrow(NotFoundException);
+      expect(workoutsService.addExercise).toHaveBeenCalledWith(
+        workoutId,
+        mockExercise,
+      );
+    });
+    it('should throw ForbiddenException when user tries to add exercise to workout owned by another user', async () => {
+      const testUser = {
+        id: 'user-1234',
+        workouts: [],
+      };
+
+      const anotherUserWorkout = {
+        id: workoutId,
+        name: 'Test Workout',
+        date: '2023-10-21T10:00:00.000Z',
+        userId: 'different-user-id',
+      };
+
+      const mockModuleRef = {
+        resolve: jest.fn().mockImplementation((service) => {
+          if (service === WorkoutsService) {
+            return Promise.resolve(mockWorkoutsService);
+          }
+          throw new Error(`Unexpected service: ${service}`);
+        }),
+      };
+
+      const mockAbility = {
+        can: jest.fn().mockReturnValue(false),
+      };
+
+      const caslAbilityFactory = {
+        defineAbility: jest.fn().mockReturnValue(mockAbility),
+      };
+
+      const mockExecutionContext = {
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({
+            user: testUser,
+            params: { id: workoutId },
+          }),
+        }),
+        getHandler: jest.fn(),
+      };
+
+      const mockReflector = new Reflector();
+      jest.spyOn(mockReflector, 'get').mockReturnValue(Resource.WORKOUT);
+
+      (mockWorkoutsService.findOne as jest.Mock).mockResolvedValue(
+        anotherUserWorkout,
+      );
+
+      const ownershipGuard = new OwnershipGuard(
+        mockReflector,
+        caslAbilityFactory,
+        mockModuleRef as unknown as ModuleRef,
+      );
+
+      await expect(async () => {
+        const canActivate = await ownershipGuard.canActivate(
+          mockExecutionContext as any,
+        );
+        if (!canActivate) {
+          throw new ForbiddenException('No permission to manage the resource.');
+        }
+        return controller.addExercise(workoutId, mockExercise);
+      }).rejects.toThrow(ForbiddenException);
+
+      expect(mockWorkoutsService.findOne).toHaveBeenCalledWith(workoutId);
+      expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
+      expect(mockAbility.can).toHaveBeenCalledWith(
+        Action.Manage,
+        expect.any(Object),
+      );
+      expect(mockModuleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
+    });
+    it('should log information about adding new exercise', async () => {
+      (workoutsService.addExercise as jest.Mock).mockReturnValueOnce(
+        mockExercise,
+      );
+
+      await controller.addExercise(workoutId, mockExercise);
+
+      expect(loggerService.log).toHaveBeenCalledWith(
+        `Adding new exercise to workut ID: ${workoutId}`,
+        WorkoutsController.name,
+      );
+    });
+    it('should throw BadRequestException when invalid exercise data is provided', async () => {
+      const invalidExercise = {
+        name: 'Bench Press',
+        order: '23',
+        type: 2,
+        notes: 'Focus on controlled movement',
+        sets: [],
+        workoutId: workoutId,
+      } as any;
+
+      const expectedError = new BadRequestException('Invalid exercise data');
+      (workoutsService.addExercise as jest.Mock).mockRejectedValue(
+        expectedError,
+      );
+
+      await expect(
+        controller.addExercise(workoutId, invalidExercise),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(workoutsService.addExercise).toHaveBeenCalledWith(
+        workoutId,
+        invalidExercise,
+      );
     });
   });
 });

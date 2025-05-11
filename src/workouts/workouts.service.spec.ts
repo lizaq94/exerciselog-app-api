@@ -3,6 +3,7 @@ import { WorkoutsService } from './workouts.service';
 import { DatabaseService } from '../database/database.service';
 import { ExercisesService } from '../exercises/exercises.service';
 import { PaginationProvider } from '../common/pagination/pagination.provider';
+import { NotFoundException } from '@nestjs/common';
 
 describe('WorkoutsService', () => {
   let service: WorkoutsService;
@@ -27,7 +28,22 @@ describe('WorkoutsService', () => {
     generatePaginationLinks: jest.fn(),
   };
 
+  const userId = 'test-user-id';
+
+  const mockWorkoutData = {
+    id: 'workout-1',
+    name: 'Strength Training',
+    date: new Date('2023-10-21T10:00:00.000Z'),
+    notes: 'Focus on upper body',
+    duration: 60,
+    userId: userId,
+    createdAt: new Date('2023-10-21T09:00:00.000Z'),
+    updatedAt: new Date('2023-10-21T11:00:00.000Z'),
+    exercises: [],
+  };
+
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WorkoutsService,
@@ -45,25 +61,12 @@ describe('WorkoutsService', () => {
   });
 
   describe('findAll', () => {
-    const userId = 'test-user-id';
     const paginationDto = { page: 1, limit: 10 };
 
-    const mockWorkoutData = [
-      {
-        id: 'workout-1',
-        name: 'Trening siłowy',
-        date: new Date('2023-10-21T10:00:00.000Z'),
-        notes: 'Skupienie na górnej części ciała',
-        duration: 60,
-        userId: userId,
-        createdAt: new Date('2023-10-21T09:00:00.000Z'),
-        updatedAt: new Date('2023-10-21T11:00:00.000Z'),
-        exercises: [],
-      },
-    ];
+    const mockWorkoutsData = [mockWorkoutData];
 
     const mockPaginationResult = {
-      data: mockWorkoutData,
+      data: mockWorkoutsData,
       meta: {
         total: 1,
         currentPage: 1,
@@ -96,7 +99,7 @@ describe('WorkoutsService', () => {
 
       mockPaginationProvider.generatePaginationLinks.mockReturnValue(mockLinks);
 
-      mockDatabaseService.workout.findMany.mockResolvedValue(mockWorkoutData);
+      mockDatabaseService.workout.findMany.mockResolvedValue(mockWorkoutsData);
       mockDatabaseService.workout.count.mockResolvedValue(1);
 
       const result = await service.findAll(
@@ -109,7 +112,7 @@ describe('WorkoutsService', () => {
       expect(result).toHaveProperty('meta');
       expect(result).toHaveProperty('links');
 
-      expect(result.data).toEqual(mockWorkoutData);
+      expect(result.data).toEqual(mockWorkoutsData);
       expect(result.meta).toEqual(mockPaginationResult.meta);
       expect(result.links).toEqual(mockLinks);
 
@@ -262,6 +265,93 @@ describe('WorkoutsService', () => {
       expect(result.links.current).toBeNull();
       expect(result.links.next).toBeNull();
       expect(result.links.previous).toBeNull();
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a single workout when it exists', async () => {
+      mockDatabaseService.workout.findUnique.mockResolvedValue(mockWorkoutData);
+
+      const result = await service.findOne(mockWorkoutData.id);
+
+      expect(result).toEqual(mockWorkoutData);
+      expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
+        where: { id: mockWorkoutData.id },
+        include: { exercises: true },
+      });
+    });
+
+    it('should include related exercises in the returned workout', async () => {
+      const mockWorkoutWithExercises = {
+        ...mockWorkoutData,
+        exercises: [
+          {
+            id: 'exercise-1',
+            name: 'Bench Press',
+            order: 1,
+            type: 'Strength',
+            notes: 'Focus on controlled movement',
+            workoutId: mockWorkoutData.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      mockDatabaseService.workout.findUnique.mockResolvedValue(
+        mockWorkoutWithExercises,
+      );
+
+      const result = await service.findOne(mockWorkoutData.id);
+
+      expect(result.exercises).toBeDefined();
+      expect(result.exercises).toHaveLength(1);
+      expect(result.exercises).toEqual(mockWorkoutWithExercises.exercises);
+
+      expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
+        where: { id: mockWorkoutData.id },
+        include: { exercises: true },
+      });
+    });
+
+    it('should call DatabaseService.workout.findUnique with the correct id', async () => {
+      const workoutId = 'test-workout-id';
+      mockDatabaseService.workout.findUnique.mockResolvedValue(mockWorkoutData);
+
+      await service.findOne(workoutId);
+
+      expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
+        where: { id: workoutId },
+        include: { exercises: true },
+      });
+    });
+
+    it('should throw NotFoundException when the workout does not exist', async () => {
+      const workoutId = 'not-existing-workout-id';
+
+      const error = new NotFoundException('Workout not found');
+
+      mockDatabaseService.workout.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne(workoutId)).rejects.toThrow(error);
+      expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
+        where: { id: workoutId },
+        include: { exercises: true },
+      });
+    });
+
+    it('should propagate an unexpected database error', async () => {
+      const workoutId = 'test-workout-id';
+      const databaseError = new Error('Database connection error');
+      mockDatabaseService.workout.findUnique.mockRejectedValue(databaseError);
+
+      await expect(service.findOne(workoutId)).rejects.toThrow(databaseError);
+
+      expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
+        where: { id: workoutId },
+        include: { exercises: true },
+      });
     });
   });
 });

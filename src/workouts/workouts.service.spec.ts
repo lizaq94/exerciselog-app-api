@@ -1,9 +1,9 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { WorkoutsService } from './workouts.service';
+import { PaginationProvider } from '../common/pagination/pagination.provider';
 import { DatabaseService } from '../database/database.service';
 import { ExercisesService } from '../exercises/exercises.service';
-import { PaginationProvider } from '../common/pagination/pagination.provider';
-import { NotFoundException } from '@nestjs/common';
+import { WorkoutsService } from './workouts.service';
 
 describe('WorkoutsService', () => {
   let service: WorkoutsService;
@@ -352,6 +352,42 @@ describe('WorkoutsService', () => {
         where: { id: workoutId },
         include: { exercises: true },
       });
+    });
+  });
+
+  describe('create', () => {
+    it('should successfully create a workout entity ', async () => {
+      mockDatabaseService.workout.create.mockResolvedValue(mockWorkoutData);
+
+      const result = await service.create(userId, mockWorkoutData);
+
+      expect(result).toEqual(mockWorkoutData);
+      expect(mockDatabaseService.workout.create).toHaveBeenCalledTimes(1);
+      expect(mockDatabaseService.workout.create).toHaveBeenCalledWith({
+        data: {
+          ...mockWorkoutData,
+          user: {
+            connect: { id: userId },
+          },
+        },
+      });
+    });
+    it('should propagate errors from the database creation process', async () => {
+      const databaseError = new Error('Database connection failed');
+      const createWorkoutDto = {
+        name: 'Test Workout',
+        date: new Date(),
+        notes: 'Test notes',
+        duration: 45,
+      };
+
+      mockDatabaseService.workout.create.mockRejectedValue(databaseError);
+
+      await expect(service.create(userId, createWorkoutDto)).rejects.toThrow(
+        databaseError,
+      );
+
+      expect(mockDatabaseService.workout.create).toHaveBeenCalledTimes(1);
     });
   });
 });

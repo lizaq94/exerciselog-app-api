@@ -390,4 +390,47 @@ describe('WorkoutsService', () => {
       expect(mockDatabaseService.workout.create).toHaveBeenCalledTimes(1);
     });
   });
+  describe('update', () => {
+    const updateWorkoutDto = {
+      name: 'Updated Workout',
+      date: new Date(),
+      notes: 'Updated notes',
+      duration: 45,
+    };
+
+    it('should update a workout when valid data is provided', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+
+      const mockUpdatedWorkout = {
+        ...mockWorkoutData,
+        ...updateWorkoutDto,
+      };
+
+      mockDatabaseService.workout.update.mockResolvedValue(mockUpdatedWorkout);
+
+      const result = await service.update(mockWorkoutData.id, updateWorkoutDto);
+
+      expect(result).toEqual(mockUpdatedWorkout);
+      expect(mockDatabaseService.workout.update).toHaveBeenCalledTimes(1);
+      expect(mockDatabaseService.workout.update).toHaveBeenCalledWith({
+        where: { id: mockWorkoutData.id },
+        data: updateWorkoutDto,
+      });
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutData.id);
+    });
+    it('should throw NotFoundException when workout does not exist', async () => {
+      const workoutId = 'wrong-workout-id';
+
+      jest
+        .spyOn(service, 'findOne')
+        .mockRejectedValue(new NotFoundException('Workout not found'));
+
+      await expect(service.update(workoutId, updateWorkoutDto)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(workoutId);
+      expect(mockDatabaseService.workout.update).not.toHaveBeenCalled();
+    });
+  });
 });

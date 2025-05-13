@@ -1,15 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { paginator, PaginatorTypes } from '@nodeteam/nestjs-prisma-pagination';
+import { Request } from 'express';
 import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
 import { PaginatedResult } from '../common/pagination/interfeces/paginated.intefece';
 import { PaginationProvider } from '../common/pagination/pagination.provider';
 import { DatabaseService } from '../database/database.service';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
+import { ExercisesService } from '../exercises/exercises.service';
 import { CreateWorkoutDto } from './dtos/create-workout.dto';
 import { UpdateWorkoutDto } from './dtos/update-workout.dto';
-import { ExercisesService } from '../exercises/exercises.service';
 import { WorkoutEntity } from './entities/workout.entity';
-import { PaginatorTypes, paginator } from '@nodeteam/nestjs-prisma-pagination';
-import { Request } from 'express';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({
   page: 1,
@@ -82,6 +82,10 @@ export class WorkoutsService {
     id: string,
     updateWorkoutDto: UpdateWorkoutDto,
   ): Promise<WorkoutEntity> {
+    const workoutToUpdate = await this.findOne(id);
+
+    if (!workoutToUpdate) throw new NotFoundException('Workout not found');
+
     return this.databaseService.workout.update({
       where: { id },
       data: updateWorkoutDto,

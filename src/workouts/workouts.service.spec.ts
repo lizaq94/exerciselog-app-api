@@ -432,5 +432,62 @@ describe('WorkoutsService', () => {
       expect(service.findOne).toHaveBeenCalledWith(workoutId);
       expect(mockDatabaseService.workout.update).not.toHaveBeenCalled();
     });
+    it('should propagate errors thrown by databaseService.workout.update', async () => {
+      const workoutId = 'test-workout-id';
+      const databaseError = new Error('Database error');
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+      mockDatabaseService.workout.update.mockRejectedValue(databaseError);
+
+      await expect(service.update(workoutId, updateWorkoutDto)).rejects.toThrow(
+        databaseError,
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(workoutId);
+      expect(mockDatabaseService.workout.update).toHaveBeenCalledWith({
+        where: { id: workoutId },
+        data: updateWorkoutDto,
+      });
+    });
+  });
+  describe('delete', () => {
+    it('should delete the workout when it exists', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+
+      mockDatabaseService.workout.delete.mockResolvedValue(mockWorkoutData);
+
+      await service.delete(mockWorkoutData.id);
+
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutData.id);
+      expect(mockDatabaseService.workout.delete).toHaveBeenCalledWith({
+        where: { id: mockWorkoutData.id },
+      });
+    });
+    it('should throw NotFoundException when the workout does not exist', async () => {
+      jest
+        .spyOn(service, 'findOne')
+        .mockRejectedValue(new NotFoundException('Workout not found'));
+
+      await expect(service.delete(mockWorkoutData.id)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutData.id);
+      expect(mockDatabaseService.workout.update).not.toHaveBeenCalled();
+    });
+    it('should propagate errors thrown by databaseService.workout.delete', async () => {
+      const workoutId = 'test-workout-id';
+      const databaseError = new Error('Database error');
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+      mockDatabaseService.workout.delete.mockRejectedValue(databaseError);
+
+      await expect(service.delete(workoutId)).rejects.toThrow(databaseError);
+
+      expect(service.findOne).toHaveBeenCalledWith(workoutId);
+      expect(mockDatabaseService.workout.delete).toHaveBeenCalledWith({
+        where: { id: workoutId },
+      });
+    });
   });
 });

@@ -82,9 +82,7 @@ export class WorkoutsService {
     id: string,
     updateWorkoutDto: UpdateWorkoutDto,
   ): Promise<WorkoutEntity> {
-    const workoutToUpdate = await this.findOne(id);
-
-    if (!workoutToUpdate) throw new NotFoundException('Workout not found');
+    await this.findOne(id);
 
     return this.databaseService.workout.update({
       where: { id },
@@ -93,10 +91,7 @@ export class WorkoutsService {
   }
 
   public async delete(id: string): Promise<void> {
-    const removeWorkout = await this.findOne(id);
-
-    if (!removeWorkout)
-      throw new NotFoundException('Workout not found or has been deleted');
+    await this.findOne(id);
 
     await this.databaseService.workout.delete({ where: { id } });
   }

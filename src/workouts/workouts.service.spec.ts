@@ -17,6 +17,10 @@ describe('WorkoutsService', () => {
       findMany: jest.fn(),
       count: jest.fn(),
     },
+    exercise: {
+      findMany: jest.fn(),
+      create: jest.fn(),
+    },
   };
 
   const mockExercisesService = {
@@ -488,6 +492,48 @@ describe('WorkoutsService', () => {
       expect(mockDatabaseService.workout.delete).toHaveBeenCalledWith({
         where: { id: workoutId },
       });
+    });
+  });
+
+  describe('findAllExercise', () => {
+    it('should return exercises for valid workout id', async () => {
+      const mockWorkoutId = 'test-workout-id';
+      const mockExercises = [
+        {
+          id: 'exercise-1',
+          name: 'Push-ups',
+          order: 1,
+          type: 'Bodyweight',
+          notes: 'Test notes',
+          workoutId: mockWorkoutId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+      mockExercisesService.findAll.mockResolvedValue(mockExercises);
+
+      const result = await service.findAllExercise(mockWorkoutId);
+
+      expect(result).toEqual(mockExercises);
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
+      expect(mockExercisesService.findAll).toHaveBeenCalledWith(mockWorkoutId);
+    });
+
+    it('should throw NotFoundException if workout does not exist', async () => {
+      const mockWorkoutId = 'test-workout-id';
+
+      jest
+        .spyOn(service, 'findOne')
+        .mockRejectedValue(new NotFoundException('Workout not found'));
+
+      await expect(service.findAllExercise(mockWorkoutId)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
+      expect(mockExercisesService.findAll).not.toHaveBeenCalled();
     });
   });
 });

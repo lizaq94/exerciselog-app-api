@@ -378,7 +378,7 @@ describe('WorkoutsService', () => {
     });
     it('should propagate errors from the database creation process', async () => {
       const databaseError = new Error('Database connection failed');
-      const createWorkoutDto = {
+      const mockCreateWorkoutDto = {
         name: 'Test Workout',
         date: new Date(),
         notes: 'Test notes',
@@ -387,9 +387,9 @@ describe('WorkoutsService', () => {
 
       mockDatabaseService.workout.create.mockRejectedValue(databaseError);
 
-      await expect(service.create(userId, createWorkoutDto)).rejects.toThrow(
-        databaseError,
-      );
+      await expect(
+        service.create(userId, mockCreateWorkoutDto),
+      ).rejects.toThrow(databaseError);
 
       expect(mockDatabaseService.workout.create).toHaveBeenCalledTimes(1);
     });
@@ -534,6 +534,89 @@ describe('WorkoutsService', () => {
 
       expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
       expect(mockExercisesService.findAll).not.toHaveBeenCalled();
+    });
+    it('should propagate error from exercisesService.findAll', async () => {
+      const mockWorkoutId = 'test-workout-id';
+      const exerciseError = new Error('Failed to fetch exercises');
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+      mockExercisesService.findAll.mockRejectedValue(exerciseError);
+
+      await expect(service.findAllExercise(mockWorkoutId)).rejects.toThrow(
+        exerciseError,
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
+      expect(mockExercisesService.findAll).toHaveBeenCalledWith(mockWorkoutId);
+    });
+  });
+  describe('addExercise', () => {
+    const mockCreateExerciseDto = {
+      name: 'Push-ups',
+      order: 1,
+      type: 'Bodyweight',
+      notes: 'Test notes',
+    };
+
+    it('should successfully add exercise to workout', async () => {
+      const mockWorkoutId = 'test-workout-id';
+
+      const mockCreatedExercise = {
+        id: 'exercise-1',
+        workoutId: mockWorkoutId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...mockCreateExerciseDto,
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+      mockExercisesService.create.mockResolvedValue(mockCreatedExercise);
+
+      const result = await service.addExercise(
+        mockWorkoutId,
+        mockCreateExerciseDto,
+      );
+
+      expect(result).toEqual(mockCreatedExercise);
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
+      expect(mockExercisesService.create).toHaveBeenCalledWith(
+        mockWorkoutId,
+        mockCreateExerciseDto,
+      );
+    });
+
+    it('should throw NotFoundException when workout does not exist', async () => {
+      const mockWorkoutId = 'test-workout-id';
+
+      jest
+        .spyOn(service, 'findOne')
+        .mockRejectedValue(new NotFoundException('Workout not found'));
+
+      await expect(
+        service.addExercise(mockWorkoutId, mockCreateExerciseDto),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
+      expect(mockExercisesService.create).not.toHaveBeenCalled();
+    });
+
+    it('should propagate error from exercisesService.create', async () => {
+      const mockWorkoutId = 'test-workout-id';
+
+      const exerciseError = new Error('Failed to create exercise');
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
+      mockExercisesService.create.mockRejectedValue(exerciseError);
+
+      await expect(
+        service.addExercise(mockWorkoutId, mockCreateExerciseDto),
+      ).rejects.toThrow(exerciseError);
+
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
+      expect(mockExercisesService.create).toHaveBeenCalledWith(
+        mockWorkoutId,
+        mockCreateExerciseDto,
+      );
     });
   });
 });

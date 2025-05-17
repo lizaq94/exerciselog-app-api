@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DatabaseService } from '../database/database.service';
+import { CreateSetDto } from './dto/create-set.dto';
 import { SetEntity } from './entities/set.entity';
 import { SetsService } from './sets.service';
 
@@ -75,6 +76,36 @@ describe('SetsService', () => {
       await expect(service.findAll(mockExerciseId)).rejects.toThrow(dbError);
       expect(mockDatabaseService.set.findMany).toHaveBeenCalledWith({
         where: { exerciseId: mockExerciseId },
+      });
+    });
+  });
+  describe('create', () => {
+    it('should create a new set with valid exerciseId and createSetDto', async () => {
+      const mockCreateSetDto: CreateSetDto = {
+        repetitions: 10,
+        weight: 50,
+        order: 1,
+      };
+
+      mockDatabaseService.set.create.mockResolvedValue({
+        ...mockSetEntity,
+        ...mockCreateSetDto,
+      });
+
+      const result = await service.create(mockExerciseId, mockCreateSetDto);
+
+      expect(result).toBeDefined();
+      expect(mockDatabaseService.set.create).toHaveBeenCalledWith({
+        data: {
+          ...mockCreateSetDto,
+          exercise: {
+            connect: { id: mockExerciseId },
+          },
+        },
+      });
+      expect(result).toEqual({
+        ...mockSetEntity,
+        ...mockCreateSetDto,
       });
     });
   });

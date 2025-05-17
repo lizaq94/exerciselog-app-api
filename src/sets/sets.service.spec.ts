@@ -1,12 +1,39 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DatabaseService } from '../database/database.service';
+import { SetEntity } from './entities/set.entity';
 import { SetsService } from './sets.service';
 
 describe('SetsService', () => {
   let service: SetsService;
 
+  const mockDatabaseService = {
+    set: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      findMany: jest.fn(),
+    },
+  };
+
+  const mockExerciseId = 'exercise-id';
+
+  const mockSetEntity: SetEntity = {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    repetitions: 10,
+    weight: 50,
+    order: 1,
+    exerciseId: mockExerciseId,
+    createdAt: new Date('2025-01-01T12:34:56.789Z'),
+    updatedAt: new Date('2025-01-15T08:21:45.123Z'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SetsService],
+      providers: [
+        SetsService,
+        { provide: DatabaseService, useValue: mockDatabaseService },
+      ],
     }).compile();
 
     service = module.get<SetsService>(SetsService);
@@ -14,5 +41,41 @@ describe('SetsService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('findAll', () => {
+    it('should return all sets for given exerciseId', async () => {
+      mockDatabaseService.set.findMany.mockResolvedValue([mockSetEntity]);
+
+      const result = await service.findAll(mockExerciseId);
+
+      expect(result).toEqual([mockSetEntity]);
+      expect(result.length).toEqual(1);
+      expect(mockDatabaseService.set.findMany).toHaveBeenCalledWith({
+        where: { exerciseId: mockExerciseId },
+      });
+    });
+    it('should return empty array when no sets exist for given exerciseId', async () => {
+      const mockExerciseId = 'wrong-id';
+
+      mockDatabaseService.set.findMany.mockResolvedValue([]);
+
+      const result = await service.findAll(mockExerciseId);
+
+      expect(result).toEqual([]);
+      expect(result.length).toBe(0);
+      expect(mockDatabaseService.set.findMany).toHaveBeenCalledWith({
+        where: { exerciseId: mockExerciseId },
+      });
+    });
+    it('should handle database errors properly', async () => {
+      const dbError = new Error('Database connection failed');
+      mockDatabaseService.set.findMany.mockRejectedValue(dbError);
+
+      await expect(service.findAll(mockExerciseId)).rejects.toThrow(dbError);
+      expect(mockDatabaseService.set.findMany).toHaveBeenCalledWith({
+        where: { exerciseId: mockExerciseId },
+      });
+    });
   });
 });

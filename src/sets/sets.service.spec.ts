@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DatabaseService } from '../database/database.service';
 import { CreateSetDto } from './dto/create-set.dto';
@@ -18,9 +19,10 @@ describe('SetsService', () => {
   };
 
   const mockExerciseId = 'exercise-id';
+  const mockSetId = 'set-id';
 
   const mockSetEntity: SetEntity = {
-    id: '123e4567-e89b-12d3-a456-426614174000',
+    id: 'set-id',
     repetitions: 10,
     weight: 50,
     order: 1,
@@ -80,13 +82,13 @@ describe('SetsService', () => {
     });
   });
   describe('create', () => {
-    it('should create a new set with valid exerciseId and createSetDto', async () => {
-      const mockCreateSetDto: CreateSetDto = {
-        repetitions: 10,
-        weight: 50,
-        order: 1,
-      };
+    const mockCreateSetDto: CreateSetDto = {
+      repetitions: 10,
+      weight: 50,
+      order: 1,
+    };
 
+    it('should create a new set with valid exerciseId and createSetDto', async () => {
       mockDatabaseService.set.create.mockResolvedValue({
         ...mockSetEntity,
         ...mockCreateSetDto,
@@ -106,6 +108,54 @@ describe('SetsService', () => {
       expect(result).toEqual({
         ...mockSetEntity,
         ...mockCreateSetDto,
+      });
+    });
+    it('should handle database errors properly', async () => {
+      const dbError = new Error('Database connection failed');
+      mockDatabaseService.set.create.mockRejectedValue(dbError);
+
+      await expect(
+        service.create(mockExerciseId, mockCreateSetDto),
+      ).rejects.toThrow(dbError);
+      expect(mockDatabaseService.set.create).toHaveBeenCalledWith({
+        data: {
+          ...mockCreateSetDto,
+          exercise: {
+            connect: { id: mockExerciseId },
+          },
+        },
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a set when valid id is provided', async () => {
+      mockDatabaseService.set.findUnique.mockResolvedValue(mockSetEntity);
+
+      const result = await service.findOne(mockSetId);
+
+      expect(result).toEqual(mockSetEntity);
+    });
+
+    it('should throw NotFoundException when set with given id does not exist', async () => {
+      mockDatabaseService.set.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne(mockSetId)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockDatabaseService.set.findUnique).toHaveBeenCalledWith({
+        where: { id: mockSetId },
+      });
+    });
+
+    it('should handle database errors properly', async () => {
+      const dbError = new Error('Database connection failed');
+      mockDatabaseService.set.findUnique.mockRejectedValue(dbError);
+
+      await expect(service.findOne(mockSetId)).rejects.toThrow(dbError);
+      expect(mockDatabaseService.set.findUnique).toHaveBeenCalledWith({
+        where: { id: mockSetId },
       });
     });
   });

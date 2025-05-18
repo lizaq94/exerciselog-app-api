@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { UpdateSetDto } from './dto/update-set.dto';
 import { CreateSetDto } from './dto/create-set.dto';
+import { UpdateSetDto } from './dto/update-set.dto';
 import { SetEntity } from './entities/set.entity';
 
 @Injectable()
@@ -39,11 +39,7 @@ export class SetsService {
   }
 
   async update(id: string, updateSetsDto: UpdateSetDto): Promise<SetEntity> {
-    const isSetExist = await this.databaseService.set.findUnique({
-      where: { id },
-    });
-
-    if (!isSetExist) throw new NotFoundException('Set not found');
+    await this.findOne(id);
 
     return this.databaseService.set.update({
       where: { id },
@@ -52,12 +48,12 @@ export class SetsService {
   }
 
   async delete(id: string): Promise<void> {
-    const isSetExist = this.findOne(id);
+    const isSetExist = await this.findOne(id);
 
     if (!isSetExist) {
       throw new NotFoundException('Set not found or has been deleted');
     }
 
-    this.databaseService.set.delete({ where: { id } });
+    await this.databaseService.set.delete({ where: { id } });
   }
 }

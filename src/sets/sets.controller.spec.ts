@@ -1,12 +1,11 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ModuleRef, Reflector } from '@nestjs/core';
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Action, CaslAbilityFactory } from '../casl/casl-ability.factory';
-import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { CaslAbilityFactory } from '../casl/casl-ability.factory';
 import { Resource } from '../casl/types/resource.type';
 import { LoggerService } from '../logger/logger.service';
 import { SetsController } from './sets.controller';
 import { SetsService } from './sets.service';
+import { testForbiddenException } from '../common/test/authorization-test.util';
 
 const mockCaslAbilityFactory = {
   createForUser: jest.fn(),
@@ -58,73 +57,6 @@ describe('SetsController', () => {
     jest.clearAllMocks();
   });
 
-  const testForbiddenException = async (
-    operation: (id: string, dto?: any) => Promise<any>,
-    id: string,
-    dto?: any,
-  ) => {
-    const testUser = { id: 'user-1234', sets: [] };
-    const anotherUserSet = {
-      id,
-      reps: 10,
-      weight: 100,
-      userId: 'different-user-id',
-    };
-
-    const mockModuleRef = {
-      resolve: jest.fn().mockImplementation((service) => {
-        if (service === SetsService) {
-          return Promise.resolve(mockSetsService);
-        }
-        throw new Error(`Unexpected service: ${service}`);
-      }),
-    };
-
-    const mockAbility = { can: jest.fn().mockReturnValue(false) };
-    const caslAbilityFactory = {
-      defineAbility: jest.fn().mockReturnValue(mockAbility),
-    };
-
-    const mockExecutionContext = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({
-          user: testUser,
-          params: { id },
-        }),
-      }),
-      getHandler: jest.fn(),
-    };
-
-    const mockReflector = new Reflector();
-    jest.spyOn(mockReflector, 'get').mockReturnValue(Resource.SET);
-
-    mockSetsService.findOne.mockResolvedValue(anotherUserSet);
-
-    const ownershipGuard = new OwnershipGuard(
-      mockReflector,
-      caslAbilityFactory,
-      mockModuleRef as unknown as ModuleRef,
-    );
-
-    await expect(async () => {
-      const canActivate = await ownershipGuard.canActivate(
-        mockExecutionContext as any,
-      );
-      if (!canActivate) {
-        throw new ForbiddenException('No permission to manage the resource.');
-      }
-      return dto ? operation(id, dto) : operation(id);
-    }).rejects.toThrow(ForbiddenException);
-
-    expect(mockSetsService.findOne).toHaveBeenCalledWith(id);
-    expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
-    expect(mockAbility.can).toHaveBeenCalledWith(
-      Action.Manage,
-      expect.any(Object),
-    );
-    expect(mockModuleRef.resolve).toHaveBeenCalledWith(SetsService);
-  };
-
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
@@ -167,6 +99,9 @@ describe('SetsController', () => {
       await testForbiddenException(
         controller.findOne.bind(controller),
         mockSetId,
+        SetsService,
+        mockSetsService,
+        Resource.SET,
       );
     });
   });
@@ -210,6 +145,9 @@ describe('SetsController', () => {
       await testForbiddenException(
         controller.update.bind(controller),
         mockSetId,
+        SetsService,
+        mockSetsService,
+        Resource.SET,
         mockUpdateDto,
       );
     });
@@ -251,6 +189,9 @@ describe('SetsController', () => {
       await testForbiddenException(
         controller.delete.bind(controller),
         mockSetId,
+        SetsService,
+        mockSetsService,
+        Resource.SET,
       );
     });
   });

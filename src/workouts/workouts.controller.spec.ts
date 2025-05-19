@@ -3,11 +3,10 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { ModuleRef, Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Action, CaslAbilityFactory } from '../casl/casl-ability.factory';
-import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { CaslAbilityFactory } from '../casl/casl-ability.factory';
 import { Resource } from '../casl/types/resource.type';
+import { testForbiddenException } from '../common/test/authorization-test.util';
 import { LoggerService } from '../logger/logger.service';
 import { WorkoutsController } from './workouts.controller';
 import { WorkoutsService } from './workouts.service';
@@ -141,75 +140,14 @@ describe('WorkoutsController', () => {
         name: 'Updated Workout',
       };
 
-      const testUser = {
-        id: 'user-1234',
-        workouts: [],
-      };
-
-      const anotherUserWorkout = {
-        id: workoutId,
-        name: 'Test Workout',
-        date: '2023-10-21T10:00:00.000Z',
-        userId: 'different-user-id',
-      };
-
-      const mockModuleRef = {
-        resolve: jest.fn().mockImplementation((service) => {
-          if (service === WorkoutsService) {
-            return Promise.resolve(mockWorkoutsService);
-          }
-          throw new Error(`Unexpected service: ${service}`);
-        }),
-      };
-
-      const mockAbility = {
-        can: jest.fn().mockReturnValue(false),
-      };
-
-      const caslAbilityFactory = {
-        defineAbility: jest.fn().mockReturnValue(mockAbility),
-      };
-
-      const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
-            user: testUser,
-            params: { id: workoutId },
-          }),
-        }),
-        getHandler: jest.fn(),
-      };
-
-      const mockReflector = new Reflector();
-      jest.spyOn(mockReflector, 'get').mockReturnValue(Resource.WORKOUT);
-
-      (mockWorkoutsService.findOne as jest.Mock).mockResolvedValue(
-        anotherUserWorkout,
+      await testForbiddenException(
+        controller.update.bind(controller),
+        workoutId,
+        WorkoutsService,
+        mockWorkoutsService,
+        Resource.WORKOUT,
+        updateWorkoutDto,
       );
-
-      const ownershipGuard = new OwnershipGuard(
-        mockReflector,
-        caslAbilityFactory,
-        mockModuleRef as unknown as ModuleRef,
-      );
-
-      await expect(async () => {
-        const canActivate = await ownershipGuard.canActivate(
-          mockExecutionContext as any,
-        );
-        if (!canActivate) {
-          throw new ForbiddenException('No permission to manage the resource.');
-        }
-        return controller.update(workoutId, updateWorkoutDto);
-      }).rejects.toThrow(ForbiddenException);
-
-      expect(mockWorkoutsService.findOne).toHaveBeenCalledWith(workoutId);
-      expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
-      expect(mockAbility.can).toHaveBeenCalledWith(
-        Action.Manage,
-        expect.any(Object),
-      );
-      expect(mockModuleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
     });
   });
 
@@ -234,75 +172,13 @@ describe('WorkoutsController', () => {
       expect(workoutsService.delete).toHaveBeenCalledWith(nonExistingId);
     });
     it('should throw ForbiddenException when user tries to delete workout owned by another user', async () => {
-      const testUser = {
-        id: 'user-1234',
-        workouts: [],
-      };
-
-      const anotherUserWorkout = {
-        id: workoutId,
-        name: 'Test Workout',
-        date: '2023-10-21T10:00:00.000Z',
-        userId: 'different-user-id',
-      };
-
-      const mockModuleRef = {
-        resolve: jest.fn().mockImplementation((service) => {
-          if (service === WorkoutsService) {
-            return Promise.resolve(mockWorkoutsService);
-          }
-          throw new Error(`Unexpected service: ${service}`);
-        }),
-      };
-
-      const mockAbility = {
-        can: jest.fn().mockReturnValue(false),
-      };
-
-      const caslAbilityFactory = {
-        defineAbility: jest.fn().mockReturnValue(mockAbility),
-      };
-
-      const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
-            user: testUser,
-            params: { id: workoutId },
-          }),
-        }),
-        getHandler: jest.fn(),
-      };
-
-      const mockReflector = new Reflector();
-      jest.spyOn(mockReflector, 'get').mockReturnValue(Resource.WORKOUT);
-
-      (mockWorkoutsService.findOne as jest.Mock).mockResolvedValue(
-        anotherUserWorkout,
+      await testForbiddenException(
+        controller.delete.bind(controller),
+        workoutId,
+        WorkoutsService,
+        mockWorkoutsService,
+        Resource.WORKOUT,
       );
-
-      const ownershipGuard = new OwnershipGuard(
-        mockReflector,
-        caslAbilityFactory,
-        mockModuleRef as unknown as ModuleRef,
-      );
-
-      await expect(async () => {
-        const canActivate = await ownershipGuard.canActivate(
-          mockExecutionContext as any,
-        );
-        if (!canActivate) {
-          throw new ForbiddenException('No permission to manage the resource.');
-        }
-        return controller.delete(workoutId);
-      }).rejects.toThrow(ForbiddenException);
-
-      expect(mockWorkoutsService.findOne).toHaveBeenCalledWith(workoutId);
-      expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
-      expect(mockAbility.can).toHaveBeenCalledWith(
-        Action.Manage,
-        expect.any(Object),
-      );
-      expect(mockModuleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
     });
     it('should log information when deleting workout', async () => {
       (workoutsService.delete as jest.Mock).mockReturnValueOnce(undefined);
@@ -417,75 +293,14 @@ describe('WorkoutsController', () => {
       );
     });
     it('should throw ForbiddenException when user tries to add exercise to workout owned by another user', async () => {
-      const testUser = {
-        id: 'user-1234',
-        workouts: [],
-      };
-
-      const anotherUserWorkout = {
-        id: workoutId,
-        name: 'Test Workout',
-        date: '2023-10-21T10:00:00.000Z',
-        userId: 'different-user-id',
-      };
-
-      const mockModuleRef = {
-        resolve: jest.fn().mockImplementation((service) => {
-          if (service === WorkoutsService) {
-            return Promise.resolve(mockWorkoutsService);
-          }
-          throw new Error(`Unexpected service: ${service}`);
-        }),
-      };
-
-      const mockAbility = {
-        can: jest.fn().mockReturnValue(false),
-      };
-
-      const caslAbilityFactory = {
-        defineAbility: jest.fn().mockReturnValue(mockAbility),
-      };
-
-      const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
-            user: testUser,
-            params: { id: workoutId },
-          }),
-        }),
-        getHandler: jest.fn(),
-      };
-
-      const mockReflector = new Reflector();
-      jest.spyOn(mockReflector, 'get').mockReturnValue(Resource.WORKOUT);
-
-      (mockWorkoutsService.findOne as jest.Mock).mockResolvedValue(
-        anotherUserWorkout,
+      await testForbiddenException(
+        controller.addExercise.bind(controller),
+        workoutId,
+        WorkoutsService,
+        mockWorkoutsService,
+        Resource.WORKOUT,
+        mockExercise,
       );
-
-      const ownershipGuard = new OwnershipGuard(
-        mockReflector,
-        caslAbilityFactory,
-        mockModuleRef as unknown as ModuleRef,
-      );
-
-      await expect(async () => {
-        const canActivate = await ownershipGuard.canActivate(
-          mockExecutionContext as any,
-        );
-        if (!canActivate) {
-          throw new ForbiddenException('No permission to manage the resource.');
-        }
-        return controller.addExercise(workoutId, mockExercise);
-      }).rejects.toThrow(ForbiddenException);
-
-      expect(mockWorkoutsService.findOne).toHaveBeenCalledWith(workoutId);
-      expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
-      expect(mockAbility.can).toHaveBeenCalledWith(
-        Action.Manage,
-        expect.any(Object),
-      );
-      expect(mockModuleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
     });
     it('should log information about adding new exercise', async () => {
       (workoutsService.addExercise as jest.Mock).mockReturnValueOnce(

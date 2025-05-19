@@ -15,7 +15,6 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiHeaders,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,

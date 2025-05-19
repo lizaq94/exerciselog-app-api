@@ -21,7 +21,7 @@ export class PaginationProvider {
     const baseUrl = `${request.protocol}://${request.get('host')}${request.path}`;
 
     const buildUrl = (page?: number) => {
-      if (!page || page < 1 || page > totalPages) return null; // zwróć null zamiast undefined
+      if (!page || page < 1 || page > totalPages) return null;
       const queryParams = new URLSearchParams(
         request.query as Record<string, string>,
       );

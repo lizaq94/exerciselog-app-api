@@ -19,7 +19,7 @@ const mockSetsService = {
   findOne: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
-  findAllExercise: jest.fn(),
+  findAll: jest.fn(),
   addExercise: jest.fn(),
 };
 
@@ -34,6 +34,8 @@ const mockExercisesService = {
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  findAllSets: jest.fn(),
+  addSet: jest.fn(),
 };
 
 const mockUploadsService = {};
@@ -219,4 +221,57 @@ describe('ExerciseController', () => {
       );
     });
   });
+
+  describe('findAllSets', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should return all sets for a specific exercise', async () => {
+      const mockSets = [
+        { id: 'set1', exerciseId: mockExerciseId, weight: 100, reps: 10 },
+        { id: 'set2', exerciseId: mockExerciseId, weight: 110, reps: 8 },
+      ];
+      mockExercisesService.findAllSets.mockResolvedValue(mockSets);
+
+      const result = await controller.findAllSets(mockExerciseId);
+
+      expect(result).toEqual(mockSets);
+      expect(mockExercisesService.findAllSets).toHaveBeenCalledWith(mockExerciseId);
+    });
+
+    it('should log information about retrieving sets', async () => {
+      const mockSets = [];
+      mockExercisesService.findAllSets.mockResolvedValue(mockSets);
+
+      await controller.findAllSets(mockExerciseId);
+
+      expect(mockLoggerService.log).toHaveBeenCalledWith(
+        `Retrieving sets for exercise ID: ${mockExerciseId}`,
+        ExercisesController.name,
+      );
+    });
+
+    it('should throw NotFoundException when exercise does not exist', async () => {
+      const nonExistentExerciseId = 'non-existent-id';
+      const notFoundError = new NotFoundException('Exercise not found');
+      mockExercisesService.findAllSets.mockRejectedValue(notFoundError);
+
+      await expect(controller.findAllSets(nonExistentExerciseId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw ForbiddenException when user tries to fetch sets for exercise owned by another user', async () => {
+      await testForbiddenException(
+        controller.findAllSets.bind(controller),
+        mockExerciseId,
+        ExercisesService,
+        mockExercisesService,
+        Resource.EXERCISE
+      );
+    });
+  });
+
+
 });

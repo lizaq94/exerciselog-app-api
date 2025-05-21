@@ -237,7 +237,9 @@ describe('ExerciseController', () => {
       const result = await controller.findAllSets(mockExerciseId);
 
       expect(result).toEqual(mockSets);
-      expect(mockExercisesService.findAllSets).toHaveBeenCalledWith(mockExerciseId);
+      expect(mockExercisesService.findAllSets).toHaveBeenCalledWith(
+        mockExerciseId,
+      );
     });
 
     it('should log information about retrieving sets', async () => {
@@ -257,9 +259,9 @@ describe('ExerciseController', () => {
       const notFoundError = new NotFoundException('Exercise not found');
       mockExercisesService.findAllSets.mockRejectedValue(notFoundError);
 
-      await expect(controller.findAllSets(nonExistentExerciseId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.findAllSets(nonExistentExerciseId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException when user tries to fetch sets for exercise owned by another user', async () => {
@@ -268,10 +270,61 @@ describe('ExerciseController', () => {
         mockExerciseId,
         ExercisesService,
         mockExercisesService,
-        Resource.EXERCISE
+        Resource.EXERCISE,
       );
     });
   });
 
+  describe('addSet', () => {
+    const mockSetDto = { weight: 100, repetitions: 10, order: 1 };
+    const mockNewSet = {
+      id: 'set1',
+      exerciseId: mockExerciseId,
+      ...mockSetDto,
+    };
 
+    it('should add a new set to an exercise', async () => {
+      mockExercisesService.addSet.mockResolvedValue(mockNewSet);
+
+      const result = await controller.addSet(mockExerciseId, mockSetDto);
+
+      expect(result).toEqual(mockNewSet);
+      expect(mockExercisesService.addSet).toHaveBeenCalledWith(
+        mockExerciseId,
+        mockSetDto,
+      );
+    });
+
+    it('should throw NotFoundException when exercise does not exist', async () => {
+      const nonExistentExerciseId = 'non-existent-id';
+      mockExercisesService.addSet.mockRejectedValue(
+        new NotFoundException('Exercise not found'),
+      );
+
+      await expect(
+        controller.addSet(nonExistentExerciseId, mockSetDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should log information about adding a new set', async () => {
+      mockExercisesService.addSet.mockResolvedValue(mockNewSet);
+
+      await controller.addSet(mockExerciseId, mockSetDto);
+
+      expect(mockLoggerService.log).toHaveBeenCalledWith(
+        `Adding new set to exercise ID: ${mockExerciseId}`,
+        ExercisesController.name,
+      );
+    });
+
+    it('should throw ForbiddenException when user tries to add set to exercise owned by another user', async () => {
+      await testForbiddenException(
+        controller.addSet.bind(controller),
+        mockExerciseId,
+        ExercisesService,
+        mockExercisesService,
+        Resource.EXERCISE,
+      );
+    });
+  });
 });

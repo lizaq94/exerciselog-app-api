@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  RequestTimeoutException,
 } from '@nestjs/common';
 import { UploadToAwsProvider } from './upload-to-aws.provider';
 import { DatabaseService } from '../../database/database.service';
@@ -16,6 +15,10 @@ export class UploadsService {
     private readonly databaseService: DatabaseService,
   ) {}
   public async uploadImage(file: Express.Multer.File, exerciseId: string) {
+    if (!file) {
+      throw new BadRequestException('No file provided.');
+    }
+
     if (
       !['image/jpeg', 'image/jpg', 'image/gif', 'image/png'].includes(
         file.mimetype,

@@ -38,7 +38,10 @@ const mockExercisesService = {
   addSet: jest.fn(),
 };
 
-const mockUploadsService = {};
+const mockUploadsService = {
+  uploadImage: jest.fn(),
+  findOne: jest.fn(),
+};
 
 const mockExerciseId = 'exercise-id';
 
@@ -324,6 +327,87 @@ describe('ExerciseController', () => {
         ExercisesService,
         mockExercisesService,
         Resource.EXERCISE,
+      );
+    });
+  });
+
+  describe('uploadImage', () => {
+    it('should upload an image for an exercise successfully', async () => {
+      const mockFile = {
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from('test'),
+        size: 1234,
+      } as Express.Multer.File;
+      const mockUploadResult = {
+        id: 'upload-id',
+        name: 'test.jpg',
+        path: 'https://cdn.example.com/test.jpg',
+        type: 'IMAGE',
+        mime: 'image/jpeg',
+        size: 1234,
+      };
+      (mockUploadsService.uploadImage as jest.Mock) = jest
+        .fn()
+        .mockResolvedValue(mockUploadResult);
+
+      const result = await controller.uploadImage(mockExerciseId, mockFile);
+
+      expect(mockUploadsService.uploadImage).toHaveBeenCalledWith(
+        mockFile,
+        mockExerciseId,
+      );
+
+      expect(result).toEqual(mockUploadResult);
+    });
+
+    it('should reject upload if no file is provided', async () => {
+      (mockUploadsService.uploadImage as jest.Mock).mockRejectedValue(
+        new Error('No file provided.'),
+      );
+
+      await expect(
+        controller.uploadImage(mockExerciseId, undefined as any),
+      ).rejects.toThrow('No file provided.');
+      expect(mockUploadsService.uploadImage).toHaveBeenCalledWith(
+        undefined,
+        mockExerciseId,
+      );
+    });
+
+    it('should reject upload if file type is invalid', async () => {
+      const invalidFile = {
+        originalname: 'test.txt',
+        mimetype: 'text/plain',
+        buffer: Buffer.from('test'),
+        size: 1234,
+      } as Express.Multer.File;
+      (mockUploadsService.uploadImage as jest.Mock).mockRejectedValue(
+        new Error('Mime type not supported.'),
+      );
+
+      await expect(
+        controller.uploadImage(mockExerciseId, invalidFile),
+      ).rejects.toThrow('Mime type not supported.');
+      expect(mockUploadsService.uploadImage).toHaveBeenCalledWith(
+        invalidFile,
+        mockExerciseId,
+      );
+    });
+
+    it('should enforce ownership before allowing image upload', async () => {
+      await testForbiddenException(
+        controller.uploadImage.bind(controller),
+        mockExerciseId,
+        ExercisesService,
+        mockExercisesService,
+        Resource.EXERCISE,
+        {
+          originalname: 'test.jpg',
+          mimetype: 'image/jpeg',
+          buffer: Buffer.from('test'),
+          size: 1234,
+        } as Express.Multer.File,
       );
     });
   });

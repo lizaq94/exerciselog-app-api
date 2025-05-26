@@ -48,11 +48,7 @@ export class ExercisesService {
     id: string,
     updateExerciseDto: UpdateExerciseDto,
   ): Promise<ExerciseEntity> {
-    const isExerciseExist = await this.databaseService.exercise.findUnique({
-      where: { id },
-    });
-
-    if (!isExerciseExist) throw new NotFoundException('Exercise not found');
+    await this.findOne(id);
 
     return this.databaseService.exercise.update({
       where: { id },
@@ -61,12 +57,12 @@ export class ExercisesService {
   }
 
   async delete(id: string): Promise<void> {
-    const isExerciseExist = this.findOne(id);
+    const isExerciseExist = await this.findOne(id);
 
     if (!isExerciseExist)
       throw new NotFoundException('Exercise not found or has been deleted');
 
-    this.databaseService.exercise.delete({ where: { id } });
+    await this.databaseService.exercise.delete({ where: { id } });
   }
 
   async findAllSets(id: string) {

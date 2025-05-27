@@ -288,4 +288,121 @@ describe('ExercisesService', () => {
       });
     });
   });
+
+  describe('findAllSets', () => {
+    it('should return all sets for a given exercise id', async () => {
+      const mockExercise = createMockExercise();
+      const mockSets = [
+        {
+          id: 'set-1',
+          repetitions: 10,
+          weight: 50,
+          order: 1,
+          exerciseId: mockExerciseId,
+        },
+        {
+          id: 'set-2',
+          repetitions: 8,
+          weight: 55,
+          order: 2,
+          exerciseId: mockExerciseId,
+        },
+      ];
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockExercise);
+      mockSetsService.findAll.mockResolvedValue(mockSets);
+
+      const result = await service.findAllSets(mockExerciseId);
+
+      expect(service.findOne).toHaveBeenCalledWith(mockExerciseId);
+      expect(mockSetsService.findAll).toHaveBeenCalledWith(mockExerciseId);
+      expect(result).toEqual(mockSets);
+    });
+
+    it('should throw NotFoundException when exercise with given id does not exist', async () => {
+      const mockExerciseId = 'wrong-exercise-id';
+
+      jest
+        .spyOn(service, 'findOne')
+        .mockRejectedValue(new NotFoundException('Exercise not found'));
+
+      await expect(service.findAllSets(mockExerciseId)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(mockExerciseId);
+      expect(mockSetsService.findAll).not.toHaveBeenCalled();
+    });
+
+    it('should handle errors thrown by setsService.findAll', async () => {
+      const mockExercise = createMockExercise();
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockExercise);
+      mockSetsService.findAll.mockRejectedValue(mockDbError);
+
+      await expect(service.findAllSets(mockExerciseId)).rejects.toThrow(
+        mockDbError,
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(mockExerciseId);
+      expect(mockSetsService.findAll).toHaveBeenCalledWith(mockExerciseId);
+    });
+  });
+
+  describe('addSet', () => {
+    const mockCreateSetDto = {
+      repetitions: 10,
+      weight: 50,
+      order: 1,
+    };
+
+    it('should add a new set to the exercise with the given id and set data', async () => {
+      const mockExercise = createMockExercise();
+      const mockSet = {
+        id: 'set-1',
+        ...mockCreateSetDto,
+        exerciseId: mockExerciseId,
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockExercise);
+      mockSetsService.create.mockResolvedValue(mockSet);
+
+      const result = await service.addSet(mockExerciseId, mockCreateSetDto);
+
+      expect(service.findOne).toHaveBeenCalledWith(mockExerciseId);
+      expect(mockSetsService.create).toHaveBeenCalledWith(
+        mockExerciseId,
+        mockCreateSetDto,
+      );
+      expect(result).toEqual(mockSet);
+    });
+
+    it('should throw NotFoundException when exercise with given id does not exist', async () => {
+      jest
+        .spyOn(service, 'findOne')
+        .mockRejectedValue(new NotFoundException('Exercise not found'));
+
+      await expect(
+        service.addSet(mockExerciseId, mockCreateSetDto),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(service.findOne).toHaveBeenCalledWith(mockExerciseId);
+      expect(mockSetsService.create).not.toHaveBeenCalled();
+    });
+
+    it('should handle errors thrown by setsService.create', async () => {
+      const mockExercise = createMockExercise();
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockExercise);
+      mockSetsService.create.mockRejectedValue(mockDbError);
+
+      await expect(
+        service.addSet(mockExerciseId, mockCreateSetDto),
+      ).rejects.toThrow(mockDbError);
+      expect(service.findOne).toHaveBeenCalledWith(mockExerciseId);
+      expect(mockSetsService.create).toHaveBeenCalledWith(
+        mockExerciseId,
+        mockCreateSetDto,
+      );
+    });
+  });
 });

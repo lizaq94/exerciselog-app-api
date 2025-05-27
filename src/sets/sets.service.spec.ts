@@ -32,6 +32,20 @@ describe('SetsService', () => {
     updatedAt: new Date('2025-01-15T08:21:45.123Z'),
   };
 
+  const mockCreateSetDto: CreateSetDto = {
+    repetitions: 10,
+    weight: 50,
+    order: 1,
+  };
+
+  const dbError = new Error('Database connection failed');
+
+  const mockUpdateSetDto: UpdateSetDto = {
+    repetitions: 12,
+    weight: 60,
+    order: 2,
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -73,7 +87,6 @@ describe('SetsService', () => {
       });
     });
     it('should handle database errors properly', async () => {
-      const dbError = new Error('Database connection failed');
       mockDatabaseService.set.findMany.mockRejectedValue(dbError);
 
       await expect(service.findAll(mockExerciseId)).rejects.toThrow(dbError);
@@ -83,12 +96,6 @@ describe('SetsService', () => {
     });
   });
   describe('create', () => {
-    const mockCreateSetDto: CreateSetDto = {
-      repetitions: 10,
-      weight: 50,
-      order: 1,
-    };
-
     it('should create a new set with valid exerciseId and createSetDto', async () => {
       mockDatabaseService.set.create.mockResolvedValue({
         ...mockSetEntity,
@@ -112,7 +119,6 @@ describe('SetsService', () => {
       });
     });
     it('should handle database errors properly', async () => {
-      const dbError = new Error('Database connection failed');
       mockDatabaseService.set.create.mockRejectedValue(dbError);
 
       await expect(
@@ -151,7 +157,6 @@ describe('SetsService', () => {
     });
 
     it('should handle database errors properly', async () => {
-      const dbError = new Error('Database connection failed');
       mockDatabaseService.set.findUnique.mockRejectedValue(dbError);
 
       await expect(service.findOne(mockSetId)).rejects.toThrow(dbError);
@@ -162,12 +167,6 @@ describe('SetsService', () => {
   });
 
   describe('update', () => {
-    const mockUpdateSetDto: UpdateSetDto = {
-      repetitions: 12,
-      weight: 60,
-      order: 2,
-    };
-
     it('should successfully update a set when valid id and data are provided', async () => {
       mockDatabaseService.set.findUnique.mockResolvedValue(mockSetEntity);
 
@@ -204,7 +203,6 @@ describe('SetsService', () => {
     });
 
     it('should handle database errors properly', async () => {
-      const dbError = new Error('Database connection failed');
       mockDatabaseService.set.findUnique.mockResolvedValue(mockSetEntity);
       mockDatabaseService.set.update.mockRejectedValue(dbError);
 
@@ -247,8 +245,6 @@ describe('SetsService', () => {
       expect(service.findOne).toHaveBeenCalledWith(mockSetId);
     });
     it('should handle database errors properly during delete operation', async () => {
-      const dbError = new Error('Database connection failed');
-
       mockDatabaseService.set.findUnique.mockResolvedValue(mockSetEntity);
       mockDatabaseService.set.delete.mockRejectedValue(dbError);
 

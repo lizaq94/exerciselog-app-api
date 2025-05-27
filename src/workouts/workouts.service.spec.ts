@@ -33,6 +33,7 @@ describe('WorkoutsService', () => {
   };
 
   const userId = 'test-user-id';
+  const mockWorkoutId = 'test-workout-id';
 
   const mockWorkoutData = {
     id: 'workout-1',
@@ -44,6 +45,44 @@ describe('WorkoutsService', () => {
     createdAt: new Date('2023-10-21T09:00:00.000Z'),
     updatedAt: new Date('2023-10-21T11:00:00.000Z'),
     exercises: [],
+  };
+
+  const mockCreateWorkoutDto = {
+    name: 'Test Workout',
+    date: new Date(),
+    notes: 'Test notes',
+    duration: 45,
+  };
+
+  const mockCreateExerciseDto = {
+    name: 'Push-ups',
+    order: 1,
+    type: 'Bodyweight',
+    notes: 'Test notes',
+  };
+
+  const mockLinks = {
+    first: 'http://localhost:3000/workouts?page=1&limit=10',
+    last: 'http://localhost:3000/workouts?page=1&limit=10',
+    current: 'http://localhost:3000/workouts?page=1&limit=10',
+    next: null,
+    previous: null,
+  };
+
+  const mockRequest = {
+    protocol: 'http',
+    get: jest.fn().mockReturnValue('localhost:3000'),
+    path: '/workouts',
+    query: { page: 1, limit: 10 },
+  };
+
+  const databaseError = new Error('Database connection failed');
+  const exerciseError = new Error('Failed to fetch exercises');
+  const updateWorkoutDto = {
+    name: 'Updated Workout',
+    date: new Date(),
+    notes: 'Updated notes',
+    duration: 45,
   };
 
   beforeEach(async () => {
@@ -79,21 +118,6 @@ describe('WorkoutsService', () => {
         next: null,
         prev: null,
       },
-    };
-
-    const mockLinks = {
-      first: 'http://localhost:3000/workouts?page=1&limit=10',
-      last: 'http://localhost:3000/workouts?page=1&limit=10',
-      current: 'http://localhost:3000/workouts?page=1&limit=10',
-      next: null,
-      previous: null,
-    };
-
-    const mockRequest = {
-      protocol: 'http',
-      get: jest.fn().mockReturnValue('localhost:3000'),
-      path: '/workouts',
-      query: paginationDto,
     };
 
     it('should return paginated workouts for a given user', async () => {
@@ -319,14 +343,13 @@ describe('WorkoutsService', () => {
     });
 
     it('should call DatabaseService.workout.findUnique with the correct id', async () => {
-      const workoutId = 'test-workout-id';
       mockDatabaseService.workout.findUnique.mockResolvedValue(mockWorkoutData);
 
-      await service.findOne(workoutId);
+      await service.findOne(mockWorkoutId);
 
       expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledTimes(1);
       expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
-        where: { id: workoutId },
+        where: { id: mockWorkoutId },
         include: { exercises: true },
       });
     });
@@ -346,14 +369,12 @@ describe('WorkoutsService', () => {
     });
 
     it('should propagate an unexpected database error', async () => {
-      const workoutId = 'test-workout-id';
-      const databaseError = new Error('Database connection error');
       mockDatabaseService.workout.findUnique.mockRejectedValue(databaseError);
 
-      await expect(service.findOne(workoutId)).rejects.toThrow(databaseError);
+      await expect(service.findOne(mockWorkoutId)).rejects.toThrow(databaseError);
 
       expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
-        where: { id: workoutId },
+        where: { id: mockWorkoutId },
         include: { exercises: true },
       });
     });
@@ -377,14 +398,6 @@ describe('WorkoutsService', () => {
       });
     });
     it('should propagate errors from the database creation process', async () => {
-      const databaseError = new Error('Database connection failed');
-      const mockCreateWorkoutDto = {
-        name: 'Test Workout',
-        date: new Date(),
-        notes: 'Test notes',
-        duration: 45,
-      };
-
       mockDatabaseService.workout.create.mockRejectedValue(databaseError);
 
       await expect(
@@ -395,13 +408,6 @@ describe('WorkoutsService', () => {
     });
   });
   describe('update', () => {
-    const updateWorkoutDto = {
-      name: 'Updated Workout',
-      date: new Date(),
-      notes: 'Updated notes',
-      duration: 45,
-    };
-
     it('should update a workout when valid data is provided', async () => {
       jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
 
@@ -437,19 +443,16 @@ describe('WorkoutsService', () => {
       expect(mockDatabaseService.workout.update).not.toHaveBeenCalled();
     });
     it('should propagate errors thrown by databaseService.workout.update', async () => {
-      const workoutId = 'test-workout-id';
-      const databaseError = new Error('Database error');
-
       jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
       mockDatabaseService.workout.update.mockRejectedValue(databaseError);
 
-      await expect(service.update(workoutId, updateWorkoutDto)).rejects.toThrow(
+      await expect(service.update(mockWorkoutId, updateWorkoutDto)).rejects.toThrow(
         databaseError,
       );
 
-      expect(service.findOne).toHaveBeenCalledWith(workoutId);
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
       expect(mockDatabaseService.workout.update).toHaveBeenCalledWith({
-        where: { id: workoutId },
+        where: { id: mockWorkoutId },
         data: updateWorkoutDto,
       });
     });
@@ -480,24 +483,20 @@ describe('WorkoutsService', () => {
       expect(mockDatabaseService.workout.update).not.toHaveBeenCalled();
     });
     it('should propagate errors thrown by databaseService.workout.delete', async () => {
-      const workoutId = 'test-workout-id';
-      const databaseError = new Error('Database error');
-
       jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
       mockDatabaseService.workout.delete.mockRejectedValue(databaseError);
 
-      await expect(service.delete(workoutId)).rejects.toThrow(databaseError);
+      await expect(service.delete(mockWorkoutId)).rejects.toThrow(databaseError);
 
-      expect(service.findOne).toHaveBeenCalledWith(workoutId);
+      expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
       expect(mockDatabaseService.workout.delete).toHaveBeenCalledWith({
-        where: { id: workoutId },
+        where: { id: mockWorkoutId },
       });
     });
   });
 
   describe('findAllExercise', () => {
     it('should return exercises for valid workout id', async () => {
-      const mockWorkoutId = 'test-workout-id';
       const mockExercises = [
         {
           id: 'exercise-1',
@@ -537,7 +536,6 @@ describe('WorkoutsService', () => {
     });
     it('should propagate error from exercisesService.findAll', async () => {
       const mockWorkoutId = 'test-workout-id';
-      const exerciseError = new Error('Failed to fetch exercises');
 
       jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
       mockExercisesService.findAll.mockRejectedValue(exerciseError);
@@ -551,13 +549,6 @@ describe('WorkoutsService', () => {
     });
   });
   describe('addExercise', () => {
-    const mockCreateExerciseDto = {
-      name: 'Push-ups',
-      order: 1,
-      type: 'Bodyweight',
-      notes: 'Test notes',
-    };
-
     it('should successfully add exercise to workout', async () => {
       const mockWorkoutId = 'test-workout-id';
 
@@ -602,9 +593,6 @@ describe('WorkoutsService', () => {
 
     it('should propagate error from exercisesService.create', async () => {
       const mockWorkoutId = 'test-workout-id';
-
-      const exerciseError = new Error('Failed to create exercise');
-
       jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
       mockExercisesService.create.mockRejectedValue(exerciseError);
 

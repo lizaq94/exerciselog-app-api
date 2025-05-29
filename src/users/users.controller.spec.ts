@@ -1,6 +1,7 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { LoggerService } from '../logger/logger.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
@@ -82,18 +83,16 @@ describe('UsersController', () => {
       );
     });
 
-    it('should throw ForbiddenException when user tries to fetch user owned by another user', async () => {
-      mockUsersService.findOneById.mockRejectedValue(
-        new ForbiddenException('No permission to access this user'),
-      );
+    it('should throw UnauthorizedException when JWT token is invalid', async () => {
+      const error = new UnauthorizedException('Unauthorized');
+      mockUsersService.findOneById.mockRejectedValue(error);
 
       await expect(controller.findOne(mockUserId)).rejects.toThrow(
-        ForbiddenException,
+        UnauthorizedException,
       );
-
-      expect(mockUsersService.findOneById).toHaveBeenCalledWith(mockUserId);
     });
   });
+
   describe('create', () => {
     const mockCreateUserDto = {
       username: 'newuser',
@@ -136,6 +135,68 @@ describe('UsersController', () => {
       mockUsersService.create.mockRejectedValue(error);
 
       await expect(controller.create(mockCreateUserDto)).rejects.toThrow(error);
+    });
+  });
+
+  describe('update', () => {
+    const mockUpdateUserDto: UpdateUserDto = {
+      username: 'new-user-name',
+    };
+
+    const mockUpdatedUser = {
+      ...mockUser,
+      ...mockUpdateUserDto,
+    };
+
+    it('should successfully update the user when valid update data is provided', async () => {
+      mockUsersService.update.mockResolvedValue(mockUpdatedUser);
+
+      const result = await controller.update(mockUserId, mockUpdateUserDto);
+
+      expect(result).toEqual(mockUpdatedUser);
+      expect(mockUsersService.update).toHaveBeenCalledWith(
+        mockUserId,
+        mockUpdateUserDto,
+      );
+    });
+
+    it('should log update action with the correct user ID', async () => {
+      mockUsersService.update.mockResolvedValue(mockUpdatedUser);
+
+      await controller.update(mockUserId, mockUpdateUserDto);
+
+      expect(mockLoggerService.log).toHaveBeenCalledWith(
+        `Updating user with ID: ${mockUserId}`,
+        UsersController.name,
+      );
+    });
+
+    it('should throw NotFoundException when the user does not exist', async () => {
+      mockUsersService.update.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(
+        controller.update(mockUserId, mockUpdateUserDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw UnauthorizedException when JWT token is invalid', async () => {
+      const error = new UnauthorizedException('Unauthorized');
+      mockUsersService.update.mockRejectedValue(error);
+
+      await expect(
+        controller.update(mockUserId, mockUpdateUserDto),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should propagate the error when the service fails during update', async () => {
+      const error = new Error('Internal server error');
+      mockUsersService.update.mockRejectedValue(error);
+
+      await expect(
+        controller.update(mockUserId, mockUpdateUserDto),
+      ).rejects.toThrow(error);
     });
   });
 });

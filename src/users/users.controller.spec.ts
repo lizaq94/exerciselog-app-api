@@ -232,5 +232,16 @@ describe('UsersController', () => {
       await expect(controller.delete(mockUserId)).rejects.toThrow(error);
       expect(mockUsersService.delete).toHaveBeenCalledWith(mockUserId);
     });
+
+    it('should call logger.error with the correct message when delete is invoked', async () => {
+      mockUsersService.delete.mockResolvedValue(undefined);
+
+      await controller.delete(mockUserId);
+
+      expect(mockLoggerService.error).toHaveBeenCalledWith(
+        `Deleting user with ID: ${mockUserId}`,
+        UsersController.name,
+      );
+    });
   });
 });

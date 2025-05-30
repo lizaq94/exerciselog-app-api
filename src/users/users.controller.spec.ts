@@ -199,4 +199,38 @@ describe('UsersController', () => {
       ).rejects.toThrow(error);
     });
   });
+
+  describe('delete', () => {
+    it('should successfully delete user when valid ID is provided', async () => {
+      mockUsersService.delete.mockResolvedValue(undefined);
+
+      const result = await controller.delete(mockUserId);
+
+      expect(result).toBeUndefined();
+      expect(mockUsersService.delete).toHaveBeenCalledWith(mockUserId);
+      expect(mockLoggerService.error).toHaveBeenCalledWith(
+        `Deleting user with ID: ${mockUserId}`,
+        UsersController.name,
+      );
+    });
+
+    it('should throw NotFoundException when trying to delete non-existing user', async () => {
+      mockUsersService.delete.mockRejectedValue(
+        new NotFoundException('User not found or has been deleted'),
+      );
+
+      await expect(controller.delete(mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockUsersService.delete).toHaveBeenCalledWith(mockUserId);
+    });
+
+    it('should propagate the error when the service fails during delete', async () => {
+      const error = new Error('Internal server error');
+      mockUsersService.delete.mockRejectedValue(error);
+
+      await expect(controller.delete(mockUserId)).rejects.toThrow(error);
+      expect(mockUsersService.delete).toHaveBeenCalledWith(mockUserId);
+    });
+  });
 });

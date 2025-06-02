@@ -33,6 +33,9 @@ import { Request as Req } from 'express';
 import { UserResponseDto } from './dto/user-response.dto';
 import { WorkoutResponseDto } from '../workouts/dtos/workout-response.dto';
 import { WorkoutsResponseDto } from '../workouts/dtos/workouts-response.dto';
+import { OwnershipGuard } from '../casl/guards/ownership.guard';
+import { Resource } from '../casl/types/resource.type';
+import { ResourceType } from '../casl/decorators/resource-type.decorator';
 
 @Controller('users')
 @ApiTags('users')
@@ -43,7 +46,8 @@ export class UsersController {
   ) {}
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, OwnershipGuard)
+  @ResourceType(Resource.USER)
   @ApiOperation({ summary: 'Get a user by ID' })
   @ApiParam({
     name: 'id',
@@ -86,7 +90,8 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, OwnershipGuard)
+  @ResourceType(Resource.USER)
   @ApiOperation({ summary: 'Update an existing user' })
   @ApiParam({
     name: 'id',
@@ -115,7 +120,8 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, OwnershipGuard)
+  @ResourceType(Resource.USER)
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete an user by its ID' })
   @ApiParam({
@@ -131,7 +137,8 @@ export class UsersController {
     return this.userService.delete(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, OwnershipGuard)
+  @ResourceType(Resource.USER)
   @ApiOperation({ summary: 'Get all workouts for a user' })
   @ApiParam({
     name: 'id',
@@ -156,6 +163,8 @@ export class UsersController {
     return this.userService.findAllWorkouts(id, workoutsQuery, request);
   }
 
+  @UseGuards(JwtAuthGuard, OwnershipGuard)
+  @ResourceType(Resource.USER)
   @Post(':id/workouts')
   @ApiOperation({ summary: 'Add a workout to a user' })
   @ApiParam({

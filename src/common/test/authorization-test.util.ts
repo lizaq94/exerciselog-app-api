@@ -57,7 +57,17 @@ export const testForbiddenException = async (
   const mockReflector = new Reflector();
   jest.spyOn(mockReflector, 'get').mockReturnValue(resourceType);
 
-  mockService.findOne.mockResolvedValue(anotherUserResource);
+  if (resourceType === Resource.USER) {
+    if (!mockService.findOneById) {
+      mockService.findOneById = jest.fn();
+    }
+    mockService.findOneById.mockResolvedValue(anotherUserResource);
+  } else {
+    if (!mockService.findOne) {
+      mockService.findOne = jest.fn();
+    }
+    mockService.findOne.mockResolvedValue(anotherUserResource);
+  }
 
   const ownershipGuard = new OwnershipGuard(
     mockReflector,
@@ -75,7 +85,12 @@ export const testForbiddenException = async (
     return dto ? operation(id, dto) : operation(id);
   }).rejects.toThrow(ForbiddenException);
 
-  expect(mockService.findOne).toHaveBeenCalledWith(id);
+  if (resourceType === Resource.USER) {
+    expect(mockService.findOneById).toHaveBeenCalledWith(id);
+  } else {
+    expect(mockService.findOne).toHaveBeenCalledWith(id);
+  }
+
   expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
   expect(mockAbility.can).toHaveBeenCalledWith(
     Action.Manage,

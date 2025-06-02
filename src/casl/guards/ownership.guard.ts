@@ -14,6 +14,8 @@ import { Resource } from '../types/resource.type';
 import { WorkoutEntity } from '../../workouts/entities/workout.entity';
 import { ExerciseEntity } from '../../exercises/entities/exercise.entity';
 import { SetEntity } from '../../sets/entities/set.entity';
+import { UsersService } from '../../users/users.service';
+import { UserEntity } from '../../users/entities/user.entity';
 
 @Injectable()
 export class OwnershipGuard implements CanActivate {
@@ -27,6 +29,7 @@ export class OwnershipGuard implements CanActivate {
     [Resource.WORKOUT]: WorkoutEntity,
     [Resource.EXERCISE]: ExerciseEntity,
     [Resource.SET]: SetEntity,
+    [Resource.USER]: UserEntity,
   };
 
   private async getService(serviceName: string) {
@@ -37,6 +40,8 @@ export class OwnershipGuard implements CanActivate {
         return this.moduleRef.resolve(ExercisesService);
       case Resource.SET:
         return this.moduleRef.resolve(SetsService);
+      case Resource.USER:
+        return this.moduleRef.resolve(UsersService);
       default:
         throw new ForbiddenException('Invalid resource type.');
     }
@@ -70,7 +75,14 @@ export class OwnershipGuard implements CanActivate {
     }
 
     const resourceService = await this.getService(resourceType);
-    const resource = await resourceService.findOne(resourceId);
+    let resource;
+    if (resourceType === Resource.USER) {
+      resource = await (resourceService as UsersService).findOneById(
+        resourceId,
+      );
+    } else {
+      resource = await (resourceService as any).findOne(resourceId);
+    }
 
     if (!resource) {
       throw new ForbiddenException('Resource not found.');

@@ -1,4 +1,8 @@
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { LoggerService } from '../logger/logger.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -9,6 +13,8 @@ import { WorkoutsService } from '../workouts/workouts.service';
 import { Resource } from '../casl/types/resource.type';
 import { testForbiddenException } from '../common/test/authorization-test.util';
 import { GetWorkoutsDto } from '../workouts/dtos/get-workouts.dto';
+import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
+import { WorkoutEntity } from '../workouts/entities/workout.entity';
 
 const mockUserId = 'user-id';
 
@@ -57,7 +63,6 @@ describe('UsersController', () => {
         { provide: LoggerService, useValue: mockLoggerService },
         { provide: CaslAbilityFactory, useValue: mockCaslAbilityFactory },
         { provide: WorkoutsService, useValue: mockWorkoutsService },
-        { provide: LoggerService, useValue: mockLoggerService },
       ],
     }).compile();
 
@@ -472,7 +477,6 @@ describe('UsersController', () => {
       );
       expect(mockUsersService.findAllWorkouts).toHaveBeenCalledTimes(1);
 
-      // Verify that pagination parameters were passed correctly
       const [userId, query, request] =
         mockUsersService.findAllWorkouts.mock.calls[0];
       expect(userId).toBe(mockUserId);
@@ -481,6 +485,109 @@ describe('UsersController', () => {
         limit: 5,
       });
       expect(request).toBe(mockRequest);
+    });
+  });
+
+  describe('addWorkout', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    const mockCreateWorkoutDto: CreateWorkoutDto = {
+      name: 'Morning Strength Training',
+      notes: 'Focus on lower body exercises',
+      duration: 60,
+    };
+
+    const mockCreatedWorkout: WorkoutEntity = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'Morning Strength Training',
+      date: new Date('2023-10-21T10:00:00.000Z'),
+      notes: 'Focus on lower body exercises',
+      duration: 60,
+      exercises: [],
+      userId: mockUserId,
+      createdAt: new Date('2025-01-01T12:34:56.789Z'),
+      updatedAt: new Date('2025-01-15T08:21:45.123Z'),
+    };
+
+    it('should successfully add workout to user', async () => {
+      (mockUsersService.addWorkout as jest.Mock).mockResolvedValue(
+        mockCreatedWorkout,
+      );
+
+      const result = await controller.addWorkout(
+        mockUserId,
+        mockCreateWorkoutDto,
+      );
+
+      expect(result).toEqual(mockCreatedWorkout);
+      expect(mockUsersService.addWorkout).toHaveBeenCalledWith(
+        mockUserId,
+        mockCreateWorkoutDto,
+      );
+      expect(mockUsersService.addWorkout).toHaveBeenCalledTimes(1);
+      expect(result.userId).toBe(mockUserId);
+    });
+
+    it('should throw NotFoundException when trying to add workout to non-existing user', async () => {
+      const invalidMockUserId = 'wrong-user-id';
+
+      (mockUsersService.addWorkout as jest.Mock).mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(
+        controller.addWorkout(invalidMockUserId, mockCreateWorkoutDto),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockUsersService.addWorkout).toHaveBeenCalledWith(
+        invalidMockUserId,
+        mockCreateWorkoutDto,
+      );
+    });
+
+    it('should throw BadRequestException when invalid workout data is provided', async () => {
+      const invalidWorkoutDto = { name: '' };
+
+      (mockUsersService.addWorkout as jest.Mock).mockRejectedValue(
+        new BadRequestException('Invalid workout data'),
+      );
+
+      await expect(
+        controller.addWorkout(
+          mockUserId,
+          invalidWorkoutDto as CreateWorkoutDto,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockUsersService.addWorkout).toHaveBeenCalledWith(
+        mockUserId,
+        invalidWorkoutDto,
+      );
+    });
+
+    it('should log information about adding new workout', async () => {
+      mockUsersService.addWorkout.mockResolvedValue(undefined);
+
+      await controller.addWorkout(mockUserId, mockCreateWorkoutDto);
+
+      expect(mockLoggerService.log).toHaveBeenCalledWith(
+        `Adding new workout for user ID: ${mockUserId}`,
+        UsersController.name,
+      );
+    });
+
+    it('should throw ForbiddenException when user tries to add workout to another user', async () => {
+      const anotherUserId = 'different-user-456';
+
+      await testForbiddenException(
+        controller.addWorkout.bind(controller),
+        anotherUserId,
+        UsersService,
+        mockUsersService,
+        Resource.USER,
+        mockCreateWorkoutDto,
+      );
     });
   });
 });

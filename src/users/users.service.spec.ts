@@ -48,4 +48,68 @@ describe('UsersService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  describe('findOne', () => {
+    const mockEmail = 'test@example.com';
+    const mockUser = {
+      id: 'user-id',
+      email: mockEmail,
+      name: 'Test User',
+      workouts: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should return a user when valid email is provided', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await service.findOne(mockEmail);
+
+      expect(result).toEqual(mockUser);
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: mockEmail },
+        include: { workouts: true },
+      });
+    });
+
+    it('should return null when user does not exist and throwError is false', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
+
+      const result = await service.findOne(mockEmail, false);
+
+      expect(result).toEqual(null);
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: mockEmail },
+        include: { workouts: true },
+      });
+    });
+
+    it('should throw NotFoundException when user does not exist and throwError is true', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne(mockEmail)).rejects.toThrow(
+        'User not found',
+      );
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: mockEmail },
+        include: { workouts: true },
+      });
+    });
+
+    it('should handle database errors properly', async () => {
+      const dbError = new Error('Database connection failed');
+
+      mockDatabaseService.user.findUnique.mockRejectedValue(dbError);
+
+      await expect(service.findOne(mockEmail)).rejects.toThrow(dbError);
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: mockEmail },
+        include: { workouts: true },
+      });
+    });
+  });
 });

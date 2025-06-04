@@ -371,7 +371,9 @@ describe('WorkoutsService', () => {
     it('should propagate an unexpected database error', async () => {
       mockDatabaseService.workout.findUnique.mockRejectedValue(databaseError);
 
-      await expect(service.findOne(mockWorkoutId)).rejects.toThrow(databaseError);
+      await expect(service.findOne(mockWorkoutId)).rejects.toThrow(
+        databaseError,
+      );
 
       expect(mockDatabaseService.workout.findUnique).toHaveBeenCalledWith({
         where: { id: mockWorkoutId },
@@ -446,9 +448,9 @@ describe('WorkoutsService', () => {
       jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
       mockDatabaseService.workout.update.mockRejectedValue(databaseError);
 
-      await expect(service.update(mockWorkoutId, updateWorkoutDto)).rejects.toThrow(
-        databaseError,
-      );
+      await expect(
+        service.update(mockWorkoutId, updateWorkoutDto),
+      ).rejects.toThrow(databaseError);
 
       expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
       expect(mockDatabaseService.workout.update).toHaveBeenCalledWith({
@@ -486,7 +488,9 @@ describe('WorkoutsService', () => {
       jest.spyOn(service, 'findOne').mockResolvedValue(mockWorkoutData);
       mockDatabaseService.workout.delete.mockRejectedValue(databaseError);
 
-      await expect(service.delete(mockWorkoutId)).rejects.toThrow(databaseError);
+      await expect(service.delete(mockWorkoutId)).rejects.toThrow(
+        databaseError,
+      );
 
       expect(service.findOne).toHaveBeenCalledWith(mockWorkoutId);
       expect(mockDatabaseService.workout.delete).toHaveBeenCalledWith({

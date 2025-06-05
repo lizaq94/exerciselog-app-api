@@ -244,4 +244,170 @@ describe('UsersService', () => {
       });
     });
   });
+  describe('update', () => {
+    const mockUpdateUserDto = {
+      username: 'Updated User',
+      email: 'updated@example.com',
+    };
+
+    const mockUpdateUserDtoWithPassword = {
+      username: 'Updated User',
+      password: 'newPassword',
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should successfully update user when valid id and data are provided', async () => {
+      const mockExistingUser = {
+        id: mockUserId,
+        email: 'old@example.com',
+        username: 'Old User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const mockUpdatedUser = {
+        id: mockUserId,
+        email: 'updated@example.com',
+        username: 'Updated User',
+        createdAt: mockExistingUser.createdAt,
+        updatedAt: new Date(),
+      };
+
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockExistingUser);
+      mockDatabaseService.user.update.mockResolvedValue(mockUpdatedUser);
+
+      const result = await service.update(mockUserId, mockUpdateUserDto);
+
+      expect(result).toBeInstanceOf(UserEntity);
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+      expect(mockDatabaseService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        data: mockUpdateUserDto,
+      });
+      expect(mockHashingProvider.encrypt).not.toHaveBeenCalled();
+    });
+
+    it('should update user with encrypted password when password is provided', async () => {
+      const mockNewHashedPassword = 'newHashedPassword';
+
+      const mockUpdateUserDtoWithNewHashedPassword = {
+        username: 'Updated User',
+        password: mockNewHashedPassword,
+      };
+
+      const mockExistingUser = {
+        id: mockUserId,
+        email: 'old@example.com',
+        username: 'Old User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const mockUpdatedUser = {
+        id: mockUserId,
+        email: 'updated@example.com',
+        username: 'Updated User',
+        createdAt: mockExistingUser.createdAt,
+        updatedAt: new Date(),
+      };
+
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockExistingUser);
+      mockHashingProvider.encrypt.mockResolvedValue(mockNewHashedPassword);
+
+      mockDatabaseService.user.update.mockResolvedValue(mockUpdatedUser);
+
+      const result = await service.update(
+        mockUserId,
+        mockUpdateUserDtoWithPassword,
+      );
+
+      expect(result).toBeInstanceOf(UserEntity);
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+      expect(mockHashingProvider.encrypt).toHaveBeenCalledWith(
+        mockUpdateUserDtoWithPassword.password,
+      );
+      expect(mockDatabaseService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+
+        data: mockUpdateUserDtoWithNewHashedPassword,
+      });
+    });
+
+    it('should throw NotFoundException when user with given id does not exist', async () => {
+      const wrongUserId = 'wrong-user-id';
+
+      const error = new NotFoundException('User not found');
+
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.update(wrongUserId, mockUpdateUserDto),
+      ).rejects.toThrow(error);
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: wrongUserId },
+      });
+    });
+
+    it('should handle password encryption errors properly', async () => {
+      const mockExistingUser = {
+        id: mockUserId,
+        email: 'old@example.com',
+        username: 'Old User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const encryptionError = new Error('Encryption failed');
+
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockExistingUser);
+      mockHashingProvider.encrypt.mockRejectedValue(encryptionError);
+
+      await expect(
+        service.update(mockUserId, mockUpdateUserDtoWithPassword),
+      ).rejects.toThrow(encryptionError);
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+      expect(mockHashingProvider.encrypt).toHaveBeenCalledWith(
+        mockUpdateUserDtoWithPassword.password,
+      );
+      expect(mockDatabaseService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should handle database update errors properly', async () => {
+      const mockExistingUser = {
+        id: mockUserId,
+        email: 'old@example.com',
+        username: 'Old User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const dbError = new Error('Database update failed');
+
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockExistingUser);
+      mockDatabaseService.user.update.mockRejectedValue(dbError);
+
+      await expect(
+        service.update(mockUserId, mockUpdateUserDto),
+      ).rejects.toThrow(dbError);
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+      expect(mockDatabaseService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        data: mockUpdateUserDto,
+      });
+      expect(mockHashingProvider.encrypt).not.toHaveBeenCalled();
+    });
+  });
 });

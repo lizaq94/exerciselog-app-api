@@ -58,11 +58,7 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
-    const userToUpdate = await this.databaseService.user.findUnique({
-      where: { id },
-    });
-
-    if (!userToUpdate) throw new NotFoundException('User not found');
+    await this.checkUserExists(id);
 
     let data = updateUserDto;
 
@@ -86,12 +82,9 @@ export class UsersService {
   }
 
   async delete(id: string): Promise<void> {
-    const isUserExist = this.findOne(id);
+    await this.checkUserExists(id, 'User not found or has been deleted');
 
-    if (!isUserExist)
-      throw new NotFoundException('User not found or has been deleted');
-
-    this.databaseService.user.delete({ where: { id } });
+    await this.databaseService.user.delete({ where: { id } });
   }
 
   async findAllWorkouts(
@@ -106,5 +99,18 @@ export class UsersService {
   async addWorkout(id: string, createWorkoutDto: CreateWorkoutDto) {
     await this.findOneById(id);
     return this.workoutService.create(id, createWorkoutDto);
+  }
+
+  private async checkUserExists(
+    id: string,
+    errorMessage?: string,
+  ): Promise<void> {
+    const userExists = await this.databaseService.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!userExists)
+      throw new NotFoundException(errorMessage || 'User not found');
   }
 }

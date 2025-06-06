@@ -284,6 +284,7 @@ describe('UsersService', () => {
       expect(result).toBeInstanceOf(UserEntity);
       expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockUserId },
+        select: { id: true },
       });
       expect(mockDatabaseService.user.update).toHaveBeenCalledWith({
         where: { id: mockUserId },
@@ -329,13 +330,13 @@ describe('UsersService', () => {
       expect(result).toBeInstanceOf(UserEntity);
       expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockUserId },
+        select: { id: true },
       });
       expect(mockHashingProvider.encrypt).toHaveBeenCalledWith(
         mockUpdateUserDtoWithPassword.password,
       );
       expect(mockDatabaseService.user.update).toHaveBeenCalledWith({
         where: { id: mockUserId },
-
         data: mockUpdateUserDtoWithNewHashedPassword,
       });
     });
@@ -352,16 +353,13 @@ describe('UsersService', () => {
       ).rejects.toThrow(error);
       expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
         where: { id: wrongUserId },
+        select: { id: true },
       });
     });
 
     it('should handle password encryption errors properly', async () => {
       const mockExistingUser = {
         id: mockUserId,
-        email: 'old@example.com',
-        username: 'Old User',
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       const encryptionError = new Error('Encryption failed');
@@ -375,6 +373,7 @@ describe('UsersService', () => {
 
       expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockUserId },
+        select: { id: true },
       });
       expect(mockHashingProvider.encrypt).toHaveBeenCalledWith(
         mockUpdateUserDtoWithPassword.password,
@@ -385,10 +384,6 @@ describe('UsersService', () => {
     it('should handle database update errors properly', async () => {
       const mockExistingUser = {
         id: mockUserId,
-        email: 'old@example.com',
-        username: 'Old User',
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       const dbError = new Error('Database update failed');
@@ -402,12 +397,67 @@ describe('UsersService', () => {
 
       expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockUserId },
+        select: { id: true },
       });
       expect(mockDatabaseService.user.update).toHaveBeenCalledWith({
         where: { id: mockUserId },
         data: mockUpdateUserDto,
       });
       expect(mockHashingProvider.encrypt).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('delete', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should successfully delete user when it exists', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue({ id: mockUserId });
+      mockDatabaseService.user.delete.mockResolvedValue(undefined);
+
+      await service.delete(mockUserId);
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockDatabaseService.user.delete).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.delete(mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockDatabaseService.user.delete).not.toHaveBeenCalled();
+    });
+
+    it('should handle database deletion errors properly', async () => {
+      const mockExistingUser = { id: mockUserId };
+
+      const dbError = new Error('Database update failed');
+
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockExistingUser);
+      mockDatabaseService.user.delete.mockRejectedValue(dbError);
+
+      await expect(service.delete(mockUserId)).rejects.toThrow(dbError);
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockDatabaseService.user.delete).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
     });
   });
 });

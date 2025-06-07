@@ -92,12 +92,12 @@ export class UsersService {
     pagination: PaginationQueryDto,
     request: Request,
   ) {
-    await this.findOneById(id);
+    await this.checkUserExists(id);
     return this.workoutService.findAll(id, pagination, request);
   }
 
   async addWorkout(id: string, createWorkoutDto: CreateWorkoutDto) {
-    await this.findOneById(id);
+    await this.checkUserExists(id);
     return this.workoutService.create(id, createWorkoutDto);
   }
 

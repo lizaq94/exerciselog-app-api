@@ -460,4 +460,83 @@ describe('UsersService', () => {
       });
     });
   });
+
+  describe('findAllWorkouts', () => {
+    const mockPagination = { page: 1, limit: 10 };
+    const mockRequest = {} as Request;
+    const mockWorkouts = [
+      { id: 'workout-1', name: 'Workout 1' },
+      { id: 'workout-2', name: 'Workout 2' },
+    ];
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should return user workouts when user exists', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockUser);
+      mockWorkoutsService.findAll.mockResolvedValue(mockWorkouts);
+
+      const result = await service.findAllWorkouts(
+        mockUserId,
+        mockPagination,
+        mockRequest as any,
+      );
+
+      expect(result).toEqual(mockWorkouts);
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockWorkoutsService.findAll).toHaveBeenCalledWith(
+        mockUserId,
+        mockPagination,
+        mockRequest,
+      );
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
+      await expect(
+        service.findAllWorkouts(mockUserId, mockPagination, mockRequest as any),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockDatabaseService.workout.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should handle database errors when checking user existence', async () => {
+      const databaseError = new Error('Database connection failed');
+      mockDatabaseService.user.findUnique.mockRejectedValue(databaseError);
+
+      await expect(
+        service.findAllWorkouts(mockUserId, mockPagination, mockRequest as any),
+      ).rejects.toThrow('Database connection failed');
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockWorkoutsService.findAll).not.toHaveBeenCalled();
+    });
+
+    it('should handle workoutService errors properly', async () => {
+      const databaseError = new Error('Database connection failed');
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockUser);
+      mockWorkoutsService.findAll.mockRejectedValue(databaseError);
+
+      await expect(
+        service.findAllWorkouts(mockUserId, mockPagination, mockRequest as any),
+      ).rejects.toThrow('Database connection failed');
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockWorkoutsService.findAll).toHaveBeenCalled();
+    });
+  });
 });

@@ -1,7 +1,3 @@
-Of course, here is a professional `README.md` file based on your repository, written in English. It includes all the essential sections to help others understand and use your project.
-
----
-
 # ExerciseLog API
 
 [![NestJS](https://img.shields.io/badge/NestJS-^11.0-red?style=for-the-badge&logo=nestjs)](https://nestjs.com/)

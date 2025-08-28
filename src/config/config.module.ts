@@ -7,7 +7,7 @@ import * as Joi from 'joi';
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
       validationSchema: Joi.object({
         // Application configuration variables
         NODE_ENV: Joi.string()

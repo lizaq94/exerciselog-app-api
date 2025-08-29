@@ -102,7 +102,6 @@ describe('Auth Strategies', () => {
   describe('JwtStrategy', () => {
     let jwtStrategy: JwtStrategy;
     let mockUsersService: jest.Mocked<UsersService>;
-    let mockConfigService: jest.Mocked<ConfigService>;
 
     beforeEach(async () => {
       const mockUsersServiceFactory = () => ({
@@ -128,7 +127,6 @@ describe('Auth Strategies', () => {
       }).compile();
 
       mockUsersService = module.get(UsersService);
-      mockConfigService = module.get(ConfigService);
       jwtStrategy = module.get<JwtStrategy>(JwtStrategy);
     });
 
@@ -160,7 +158,6 @@ describe('Auth Strategies', () => {
   describe('JwtRefreshStrategy', () => {
     let jwtRefreshStrategy: JwtRefreshStrategy;
     let mockAuthService: jest.Mocked<AuthService>;
-    let mockConfigService: jest.Mocked<ConfigService>;
 
     beforeEach(async () => {
       const mockAuthServiceFactory = () => ({
@@ -186,7 +183,6 @@ describe('Auth Strategies', () => {
       }).compile();
 
       mockAuthService = module.get(AuthService);
-      mockConfigService = module.get(ConfigService);
       jwtRefreshStrategy = module.get<JwtRefreshStrategy>(JwtRefreshStrategy);
     });
 

@@ -67,25 +67,6 @@ export class UsersController {
     };
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, OwnershipGuard)
-  @ResourceType(Resource.USER)
-  @ApiOperation({ summary: 'Get a user by ID' })
-  @ApiParam({
-    name: 'id',
-    description: 'The unique identifier of the user',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @ApiOkResponse({
-    type: UserResponseDto,
-    description: 'Returns a user entity based on the ID provided',
-  })
-  @UseInterceptors(ClassSerializerInterceptor)
-  findOne(@Param('id') id: string) {
-    this.logger.log(`Fetching user with ID: ${id}`, UsersController.name);
-    return this.userService.findOneById(id);
-  }
-
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
   @ApiBody({

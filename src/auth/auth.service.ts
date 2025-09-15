@@ -37,16 +37,25 @@ export class AuthService {
       expireAccessToken,
       expireRefreshToken,
     );
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    };
   }
 
   async signup(userData: CreateUserDto, response: Response) {
-    const existingUser = await this.usersService.findOne(userData.email, false);
+    let newUser;
 
-    if (existingUser) {
-      throw new UnauthorizedException('User already exists.');
+    try {
+      newUser = await this.usersService.create(userData);
+    } catch (error) {
+      if (error.message?.includes('is already taken')) {
+        throw new UnauthorizedException('User already exists.');
+      }
+      throw error;
     }
-
-    const newUser = await this.usersService.create(userData);
 
     const { accessToken, refreshToken, expireAccessToken, expireRefreshToken } =
       this.generateTokens(newUser.id);
@@ -60,11 +69,19 @@ export class AuthService {
       expireRefreshToken,
     );
 
-    try {
-      await this.mailService.sendUserWelcome(newUser);
-    } catch (error) {
-      throw new RequestTimeoutException(error);
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        await this.mailService.sendUserWelcome(newUser);
+      } catch (error) {
+        throw new RequestTimeoutException(error);
+      }
     }
+
+    return {
+      id: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
+    };
   }
 
   async logout(user: UserEntity, response: Response) {
@@ -116,15 +133,17 @@ export class AuthService {
       refreshToken: await this.hashingProvider.encrypt(refreshToken),
     });
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     response.cookie(this.ACCESS_TOKEN_COOKIE, accessToken, {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       expires: expireAccessToken,
     });
 
     response.cookie(this.REFRESH_TOKEN_COOKIE, refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       expires: expireRefreshToken,
     });
   }
@@ -155,13 +174,18 @@ export class AuthService {
   async verifyUserRefreshToken(refreshToken: string, userId: string) {
     try {
       const user = await this.usersService.findOneById(userId);
+
+      if (!user.refreshToken) {
+        throw new UnauthorizedException('No refresh token found for user.');
+      }
+
       const authenticated = await this.hashingProvider.compareValueWithHash(
         refreshToken,
         user.refreshToken,
       );
 
       if (!authenticated) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('Refresh token comparison failed.');
       }
 
       return user;

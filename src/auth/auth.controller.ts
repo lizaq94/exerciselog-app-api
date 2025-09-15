@@ -26,6 +26,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @HttpCode(200)
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'User login' })
   @ApiBody({
@@ -81,6 +82,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @HttpCode(200)
   @UseGuards(JwtRefreshAuthGuard)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({

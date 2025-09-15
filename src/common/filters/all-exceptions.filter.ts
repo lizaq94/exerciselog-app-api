@@ -56,7 +56,18 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
 
     response.status(responseObject.statusCode).json(responseObject);
 
-    this.logger.error(responseObject.response, AllExceptionsFilter.name);
+    const isTestEnv = process.env.NODE_ENV === 'test';
+    const isExpectedError =
+      exception instanceof HttpException && responseObject.statusCode < 500;
+
+    if (isTestEnv && isExpectedError) {
+      this.logger.warn(
+        `Expected test error: ${JSON.stringify(responseObject.response)}`,
+        AllExceptionsFilter.name,
+      );
+    } else {
+      this.logger.error(responseObject.response, AllExceptionsFilter.name);
+    }
 
     super.catch(exception, host);
   }

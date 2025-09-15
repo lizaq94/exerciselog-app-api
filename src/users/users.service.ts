@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
 import { DatabaseService } from '../database/database.service';
 import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
@@ -42,19 +46,28 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
 
-    return plainToInstance(UserEntity, user);
+    return { ...user } as UserEntity;
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const password = await this.hashingProvider.encrypt(createUserDto.password);
-    const user = this.databaseService.user.create({
-      data: {
-        ...createUserDto,
-        password,
-      },
-    });
 
-    return plainToInstance(UserEntity, user);
+    try {
+      const user = await this.databaseService.user.create({
+        data: {
+          ...createUserDto,
+          password,
+        },
+      });
+
+      return plainToInstance(UserEntity, user);
+    } catch (error) {
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0] || 'field';
+        throw new BadRequestException(`${field} is already taken`);
+      }
+      throw error;
+    }
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
@@ -73,7 +86,7 @@ export class UsersService {
       };
     }
 
-    const updatedUser = this.databaseService.user.update({
+    const updatedUser = await this.databaseService.user.update({
       where: { id },
       data,
     });

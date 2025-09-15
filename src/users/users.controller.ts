@@ -13,6 +13,8 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { UserEntity } from './entities/user.entity';
 import {
   ApiBody,
   ApiCreatedResponse,
@@ -44,6 +46,26 @@ export class UsersController {
     private readonly userService: UsersService,
     private logger: LoggerService,
   ) {}
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current authenticated user' })
+  @ApiOkResponse({
+    type: UserResponseDto,
+    description: 'Returns the current authenticated user information',
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  getMe(@CurrentUser() user: UserEntity) {
+    this.logger.log(
+      `Fetching current user info: ${user.id}`,
+      UsersController.name,
+    );
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    };
+  }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, OwnershipGuard)

@@ -5,6 +5,7 @@ import { AppModule } from '../../src/app.module';
 import { DatabaseService } from '../../src/database/database.service';
 import { CreateUserDto } from '../../src/users/dto/create-user.dto';
 import { createApp } from '../../src/app.create';
+import { loginUser } from '../utilis/login-user.util';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication;
@@ -14,19 +15,6 @@ describe('UsersController (e2e)', () => {
   const cleanDatabase = async () => {
     await databaseService.upload.deleteMany({});
     await databaseService.user.deleteMany({});
-  };
-
-  const loginUser = async (userData: CreateUserDto) => {
-    const agent = request.agent(server);
-
-    await agent.post('/auth/signup').send(userData).expect(201);
-
-    const loginResponse = await agent
-      .post('/auth/login')
-      .send({ email: userData.email, password: userData.password })
-      .expect(200);
-
-    return { agent, user: loginResponse.body.data };
   };
 
   const createTestUserData = (suffix = ''): CreateUserDto => ({
@@ -60,7 +48,7 @@ describe('UsersController (e2e)', () => {
   describe('/users/me (GET)', () => {
     it('should get own user data when authenticated user requests their own profile', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
 
       const response = await agent.get(`/users/me`).expect(200);
 
@@ -79,7 +67,7 @@ describe('UsersController (e2e)', () => {
   describe('/users/:id (PATCH)', () => {
     it('should update own user data when authenticated user updates their profile', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
 
       const updateData = {
         username: 'updatedusername',
@@ -106,8 +94,8 @@ describe('UsersController (e2e)', () => {
       const userData1 = createTestUserData('1');
       const userData2 = createTestUserData('2');
 
-      const { agent: agent1 } = await loginUser(userData1);
-      const { user: user2 } = await loginUser(userData2);
+      const { agent: agent1 } = await loginUser(server, userData1);
+      const { user: user2 } = await loginUser(server, userData2);
 
       const updateData = {
         username: 'hackedusername',
@@ -122,8 +110,8 @@ describe('UsersController (e2e)', () => {
       const userData1 = createTestUserData('1');
       const userData2 = createTestUserData('2');
 
-      const { agent: agent1 } = await loginUser(userData1);
-      const { user: user2 } = await loginUser(userData2);
+      const { agent: agent1 } = await loginUser(server, userData1);
+      const { user: user2 } = await loginUser(server, userData2);
 
       await agent1.delete(`/users/${user2.id}`).expect(403);
     });

@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+
 import { AppModule } from '../../src/app.module';
 import { DatabaseService } from '../../src/database/database.service';
 import { CreateUserDto } from '../../src/users/dto/create-user.dto';
 import { CreateWorkoutDto } from '../../src/workouts/dtos/create-workout.dto';
 import { createApp } from '../../src/app.create';
+import { loginUser } from '../utilis/login-user.util';
 
 describe('WorkoutsController (e2e)', () => {
   let app: INestApplication;
@@ -18,19 +19,6 @@ describe('WorkoutsController (e2e)', () => {
     await databaseService.workout.deleteMany({});
     await databaseService.upload.deleteMany({});
     await databaseService.user.deleteMany({});
-  };
-
-  const loginUser = async (userData: CreateUserDto) => {
-    const agent = request.agent(server);
-
-    await agent.post('/auth/signup').send(userData).expect(201);
-
-    const loginResponse = await agent
-      .post('/auth/login')
-      .send({ email: userData.email, password: userData.password })
-      .expect(200);
-
-    return { agent, user: loginResponse.body.data };
   };
 
   const createWorkout = async (
@@ -83,7 +71,7 @@ describe('WorkoutsController (e2e)', () => {
   describe('/users/:id/workouts (POST)', () => {
     it('should register a new workout when authenticated user creates workout for themselves', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
       const workoutData = createTestWorkoutData();
 
       const response = await agent
@@ -110,8 +98,8 @@ describe('WorkoutsController (e2e)', () => {
       const userData2 = createTestUserData('2');
       const workoutData = createTestWorkoutData();
 
-      const { agent: agent1 } = await loginUser(userData1);
-      const { user: user2 } = await loginUser(userData2);
+      const { agent: agent1 } = await loginUser(server, userData1);
+      const { user: user2 } = await loginUser(server, userData2);
 
       await agent1
         .post(`/users/${user2.id}/workouts`)
@@ -123,7 +111,7 @@ describe('WorkoutsController (e2e)', () => {
   describe('/users/:id/workouts (GET)', () => {
     it('should fetch paginated list of workouts when authenticated user requests their own workouts', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
 
       // Create two workouts for the test
       const workoutData1 = createTestWorkoutData('1');
@@ -153,8 +141,8 @@ describe('WorkoutsController (e2e)', () => {
       const userData1 = createTestUserData('1');
       const userData2 = createTestUserData('2');
 
-      const { agent: agent1 } = await loginUser(userData1);
-      const { user: user2 } = await loginUser(userData2);
+      const { agent: agent1 } = await loginUser(server, userData1);
+      const { user: user2 } = await loginUser(server, userData2);
 
       await agent1.get(`/users/${user2.id}/workouts`).expect(403);
     });
@@ -163,7 +151,7 @@ describe('WorkoutsController (e2e)', () => {
   describe('/workouts/:id (GET)', () => {
     it('should fetch workout details when authenticated user requests their own workout', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
       const workoutData = createTestWorkoutData();
 
       const createdWorkout = await createWorkout(agent, user.id, workoutData);
@@ -189,8 +177,8 @@ describe('WorkoutsController (e2e)', () => {
       const userData2 = createTestUserData('2');
       const workoutData = createTestWorkoutData();
 
-      const { agent: agent1 } = await loginUser(userData1);
-      const { agent: agent2, user: user2 } = await loginUser(userData2);
+      const { agent: agent1 } = await loginUser(server, userData1);
+      const { agent: agent2, user: user2 } = await loginUser(server, userData2);
 
       const createdWorkout = await createWorkout(agent2, user2.id, workoutData);
 
@@ -205,7 +193,7 @@ describe('WorkoutsController (e2e)', () => {
 
     it('should throw NotFoundException when workout does not exist', async () => {
       const userData = createTestUserData();
-      const { agent } = await loginUser(userData);
+      const { agent } = await loginUser(server, userData);
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
 
       await agent.get(`/workouts/${nonExistentId}`).expect(404);
@@ -215,7 +203,7 @@ describe('WorkoutsController (e2e)', () => {
   describe('/workouts/:id (PATCH)', () => {
     it('should update workout when authenticated user modifies their own workout', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
       const workoutData = createTestWorkoutData();
 
       const createdWorkout = await createWorkout(agent, user.id, workoutData);
@@ -246,8 +234,8 @@ describe('WorkoutsController (e2e)', () => {
       const userData2 = createTestUserData('2');
       const workoutData = createTestWorkoutData();
 
-      const { agent: agent1 } = await loginUser(userData1);
-      const { agent: agent2, user: user2 } = await loginUser(userData2);
+      const { agent: agent1 } = await loginUser(server, userData1);
+      const { agent: agent2, user: user2 } = await loginUser(server, userData2);
 
       const createdWorkout = await createWorkout(agent2, user2.id, workoutData);
 
@@ -263,7 +251,7 @@ describe('WorkoutsController (e2e)', () => {
 
     it('should throw NotFoundException when trying to update non-existing workout', async () => {
       const userData = createTestUserData();
-      const { agent } = await loginUser(userData);
+      const { agent } = await loginUser(server, userData);
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
 
       const updateData = {
@@ -280,7 +268,7 @@ describe('WorkoutsController (e2e)', () => {
   describe('/workouts/:id (DELETE)', () => {
     it('should delete workout when authenticated user removes their own workout', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
       const workoutData = createTestWorkoutData();
 
       const createdWorkout = await createWorkout(agent, user.id, workoutData);
@@ -292,7 +280,7 @@ describe('WorkoutsController (e2e)', () => {
 
     it('should delete workout and cascade related exercises and sets when workout is removed', async () => {
       const userData = createTestUserData();
-      const { agent, user } = await loginUser(userData);
+      const { agent, user } = await loginUser(server, userData);
       const workoutData = createTestWorkoutData();
 
       const createdWorkout = await createWorkout(agent, user.id, workoutData);
@@ -319,8 +307,8 @@ describe('WorkoutsController (e2e)', () => {
       const userData2 = createTestUserData('2');
       const workoutData = createTestWorkoutData();
 
-      const { agent: agent1 } = await loginUser(userData1);
-      const { agent: agent2, user: user2 } = await loginUser(userData2);
+      const { agent: agent1 } = await loginUser(server, userData1);
+      const { agent: agent2, user: user2 } = await loginUser(server, userData2);
 
       const createdWorkout = await createWorkout(agent2, user2.id, workoutData);
 
@@ -331,7 +319,7 @@ describe('WorkoutsController (e2e)', () => {
 
     it('should throw NotFoundException when trying to delete non-existing workout', async () => {
       const userData = createTestUserData();
-      const { agent } = await loginUser(userData);
+      const { agent } = await loginUser(server, userData);
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
 
       await agent.delete(`/workouts/${nonExistentId}`).expect(404);

@@ -5,6 +5,7 @@ import { AppModule } from '../../src/app.module';
 import { DatabaseService } from '../../src/database/database.service';
 import { CreateUserDto } from '../../src/users/dto/create-user.dto';
 import { createApp } from '../../src/app.create';
+import { loginUser } from '../utilis/login-user.util';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -14,19 +15,6 @@ describe('AuthController (e2e)', () => {
   const cleanDatabase = async () => {
     await databaseService.upload.deleteMany({});
     await databaseService.user.deleteMany({});
-  };
-
-  const loginUser = async (userData: CreateUserDto) => {
-    const agent = request.agent(server);
-
-    await agent.post('/auth/signup').send(userData).expect(201);
-
-    const loginResponse = await agent
-      .post('/auth/login')
-      .send({ email: userData.email, password: userData.password })
-      .expect(200);
-
-    return { agent, user: loginResponse.body.data };
   };
 
   const createTestUserData = (suffix = ''): CreateUserDto => ({
@@ -174,7 +162,7 @@ describe('AuthController (e2e)', () => {
   describe('/auth/refresh (POST)', () => {
     it('should refresh access token when provided with valid refresh token', async () => {
       const userData = createTestUserData();
-      const { agent } = await loginUser(userData);
+      const { agent } = await loginUser(server, userData);
 
       const response = await agent.post('/auth/refresh').expect(200);
 
@@ -205,7 +193,7 @@ describe('AuthController (e2e)', () => {
   describe('/auth/logout (POST)', () => {
     it('should logout user and clear cookies when authenticated', async () => {
       const userData = createTestUserData();
-      const { agent } = await loginUser(userData);
+      const { agent } = await loginUser(server, userData);
 
       const response = await agent.post('/auth/logout').expect(204);
 
@@ -233,7 +221,7 @@ describe('AuthController (e2e)', () => {
 
     it('should access protected resource when authenticated', async () => {
       const userData = createTestUserData();
-      const { agent } = await loginUser(userData);
+      const { agent } = await loginUser(server, userData);
 
       const response = await agent.get('/users/me').expect(200);
 

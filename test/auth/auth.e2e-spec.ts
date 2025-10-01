@@ -1,27 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../src/app.module';
-import { DatabaseService } from '../../src/database/database.service';
-import { CreateUserDto } from '../../src/users/dto/create-user.dto';
-import { createApp } from '../../src/app.create';
-import { loginUser } from '../utilis/login-user.util';
+import { createTestUserData } from '../fixtures';
+import {
+  cleanDatabase,
+  setupE2ETest,
+  setupSingleUser,
+  teardownE2ETest,
+} from '../helpers';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let server: any;
-  let databaseService: DatabaseService;
-
-  const cleanDatabase = async () => {
-    await databaseService.upload.deleteMany({});
-    await databaseService.user.deleteMany({});
-  };
-
-  const createTestUserData = (suffix = ''): CreateUserDto => ({
-    username: `testuser${suffix}`,
-    email: `test${suffix}@example.com`,
-    password: 'SecurePassword123!',
-  });
+  let databaseService: any;
 
   const hasCookie = (response: any, cookieName: string): boolean => {
     const cookies = response.headers['set-cookie'];
@@ -32,25 +22,19 @@ describe('AuthController (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    createApp(app);
-
-    await app.init();
-    server = app.getHttpServer();
-    databaseService = moduleFixture.get<DatabaseService>(DatabaseService);
+    const context = await setupE2ETest();
+    app = context.app;
+    server = context.server;
+    databaseService = context.databaseService;
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    await cleanDatabase(databaseService);
   });
 
   afterAll(async () => {
-    await cleanDatabase();
-    await app.close();
+    await cleanDatabase(databaseService);
+    await teardownE2ETest(app);
   });
 
   describe('/auth/signup (POST)', () => {
@@ -161,15 +145,14 @@ describe('AuthController (e2e)', () => {
 
   describe('/auth/refresh (POST)', () => {
     it('should refresh access token when provided with valid refresh token', async () => {
-      const userData = createTestUserData();
-      const { agent } = await loginUser(server, userData);
+      const { agent, user } = await setupSingleUser(server);
 
       const response = await agent.post('/auth/refresh').expect(200);
 
       expect(response.body).toHaveProperty('apiVersion');
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('id');
-      expect(response.body.data).toHaveProperty('email', userData.email);
+      expect(response.body.data).toHaveProperty('email', user.email);
       expect(response.body.data).not.toHaveProperty('password');
       expect(response.body.data).not.toHaveProperty('refreshToken');
 
@@ -192,8 +175,7 @@ describe('AuthController (e2e)', () => {
 
   describe('/auth/logout (POST)', () => {
     it('should logout user and clear cookies when authenticated', async () => {
-      const userData = createTestUserData();
-      const { agent } = await loginUser(server, userData);
+      const { agent } = await setupSingleUser(server);
 
       const response = await agent.post('/auth/logout').expect(204);
 
@@ -220,15 +202,14 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should access protected resource when authenticated', async () => {
-      const userData = createTestUserData();
-      const { agent } = await loginUser(server, userData);
+      const { agent, user } = await setupSingleUser(server);
 
       const response = await agent.get('/users/me').expect(200);
 
       expect(response.body).toHaveProperty('apiVersion');
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('id');
-      expect(response.body.data).toHaveProperty('email', userData.email);
+      expect(response.body.data).toHaveProperty('email', user.email);
       expect(response.body.data).not.toHaveProperty('password');
       expect(response.body.data).not.toHaveProperty('refreshToken');
     });

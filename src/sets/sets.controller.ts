@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   UseGuards,
@@ -22,7 +23,6 @@ import { LoggerService } from '../logger/logger.service';
 import { UpdateSetDto } from './dto/update-set.dto';
 import { SetsService } from './sets.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { SetEntity } from './entities/set.entity';
 import { SetResponseDto } from './dto/set-response.dto';
 
 @UseGuards(JwtAuthGuard)
@@ -73,6 +73,7 @@ export class SetsController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete a set by its unique ID' })
   @UseGuards(OwnershipGuard)
   @ResourceType(Resource.SET)

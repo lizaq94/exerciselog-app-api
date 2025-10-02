@@ -3,7 +3,7 @@ import { DatabaseService } from '../../src/database/database.service';
 /**
  * Default entities to clean in full cleanup
  */
-const DEFAULT_ENTITIES = ['set', 'exercise', 'workout', 'upload', 'user'];
+const DEFAULT_ENTITIES = ['upload', 'set', 'exercise', 'workout', 'user'];
 
 /**
  * Cleans the database by deleting all records from specified entities

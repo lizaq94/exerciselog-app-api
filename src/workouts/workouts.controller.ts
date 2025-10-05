@@ -26,8 +26,8 @@ import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { ExerciseResponseDto } from '../exercises/dto/exercise-response.dto';
 import { ExercisesResponseDto } from '../exercises/dto/exercises-response.dto';
 import { LoggerService } from '../logger/logger.service';
-import { UpdateWorkoutDto } from './dtos/update-workout.dto';
-import { WorkoutResponseDto } from './dtos/workout-response.dto';
+import { UpdateWorkoutDto } from './dto/update-workout.dto';
+import { WorkoutResponseDto } from './dto/workout-response.dto';
 import { WorkoutsService } from './workouts.service';
 
 @UseGuards(JwtAuthGuard)

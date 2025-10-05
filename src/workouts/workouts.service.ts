@@ -7,8 +7,8 @@ import { PaginationProvider } from '../common/pagination/pagination.provider';
 import { DatabaseService } from '../database/database.service';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';
 import { ExercisesService } from '../exercises/exercises.service';
-import { CreateWorkoutDto } from './dtos/create-workout.dto';
-import { UpdateWorkoutDto } from './dtos/update-workout.dto';
+import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { UpdateWorkoutDto } from './dto/update-workout.dto';
 import { WorkoutEntity } from './entities/workout.entity';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({

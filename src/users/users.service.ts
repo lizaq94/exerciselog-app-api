@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
 import { DatabaseService } from '../database/database.service';
-import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
+import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';

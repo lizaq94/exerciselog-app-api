@@ -1,13 +1,49 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { GenerateWorkoutDto } from '../dto/generate-workout.dto';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
+import * as Handlebars from 'handlebars';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 @Injectable()
 export class OpenRouterProvider {
-  constructor(private readonly httpService: HttpService) {}
+  private promptTemplate: Handlebars.TemplateDelegate;
+
+  constructor(private readonly httpService: HttpService) {
+    this.loadPromptTemplate();
+  }
+
+  private async loadPromptTemplate() {
+    try {
+      const templatePath = path.join(
+        process.cwd(),
+        'src',
+        'ai',
+        'prompts',
+        'generate-workout.prompt.hbs',
+      );
+      const templateString = await fs.readFile(templatePath, 'utf-8');
+      this.promptTemplate = Handlebars.compile(templateString);
+      console.log('Szablon promptu został pomyślnie załadowany.');
+    } catch (error) {
+      console.error('Błąd podczas ładowania szablonu promptu:', error);
+      throw new InternalServerErrorException(
+        'Nie można załadować szablonu promptu.',
+      );
+    }
+  }
 
   public async generateWorkout(generateWorkoutDto: GenerateWorkoutDto) {
+    const finalPrompt = this.promptTemplate({
+      ...generateWorkoutDto,
+    });
+
     const url = `${process.env.OPEN_ROUTER_API_URL}/chat/completions`;
     const headers = {
       Authorization: `Bearer ${process.env.OPEN_ROUTER_API_KEY}`,
@@ -18,8 +54,7 @@ export class OpenRouterProvider {
       messages: [
         {
           role: 'user',
-          content:
-            "If you built the world's tallest skyscraper, what would you name it?",
+          content: finalPrompt,
         },
       ],
     };
@@ -36,8 +71,6 @@ export class OpenRouterProvider {
           HttpStatus.BAD_GATEWAY,
         );
       }
-
-      console.log('Kamil | choice: ', choice);
 
       return choice;
     } catch (err) {

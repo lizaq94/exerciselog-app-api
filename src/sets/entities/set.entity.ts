@@ -31,6 +31,21 @@ export class SetEntity implements Set {
 
   @ApiProperty({
     description:
+      'Duration of the set in seconds (e.g., for timed exercises like planks)',
+    example: 60,
+    required: false,
+  })
+  durationInSeconds: number | null;
+
+  @ApiProperty({
+    description: 'Rest time after this set in seconds',
+    example: 90,
+    required: false,
+  })
+  restAfterSetInSeconds: number | null;
+
+  @ApiProperty({
+    description:
       'The ID of the associated exercise. Can be null if not linked to an exercise.',
     example: '22f0dd54-7acd-476f-9fc9-140bb5cb8b20',
     nullable: true,

@@ -52,14 +52,16 @@ model Exercise {
 }
 
 model Set {
-  id          String    @id @default(uuid())
-  exercise    Exercise? @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  exerciseId  String?
-  repetitions Int
-  weight      Float
-  order       Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  exercise              Exercise? @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exerciseId            String?
+  repetitions           Int
+  weight                Float
+  order                 Int
+  durationInSeconds     Int?
+  restAfterSetInSeconds Int?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 model Upload {

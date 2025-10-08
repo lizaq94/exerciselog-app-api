@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class CreateSetDto {
   @ApiProperty({
@@ -27,4 +27,14 @@ export class CreateSetDto {
   @IsNumber()
   @Min(1)
   order: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  durationInSeconds?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  restAfterSetInSeconds?: number;
 }

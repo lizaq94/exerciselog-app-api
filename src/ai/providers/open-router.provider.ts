@@ -10,12 +10,18 @@ import { lastValueFrom } from 'rxjs';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { AiResponseParserService } from '../services/ai-response-parser/ai-response-parser.service';
+import { LoggerService } from '../../logger/logger.service';
 
 @Injectable()
 export class OpenRouterProvider {
   private promptTemplate: Handlebars.TemplateDelegate;
 
-  constructor(private readonly httpService: HttpService) {
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly aiResponseParserService: AiResponseParserService,
+    private readonly logger: LoggerService,
+  ) {
     this.loadPromptTemplate();
   }
 
@@ -30,12 +36,16 @@ export class OpenRouterProvider {
       );
       const templateString = await fs.readFile(templatePath, 'utf-8');
       this.promptTemplate = Handlebars.compile(templateString);
-      console.log('Szablon promptu został pomyślnie załadowany.');
-    } catch (error) {
-      console.error('Błąd podczas ładowania szablonu promptu:', error);
-      throw new InternalServerErrorException(
-        'Nie można załadować szablonu promptu.',
+      this.logger.log(
+        'Prompt template loaded successfully',
+        OpenRouterProvider.name,
       );
+    } catch (error) {
+      this.logger.error(
+        `Error loading prompt template: ${error}`,
+        OpenRouterProvider.name,
+      );
+      throw new InternalServerErrorException('Failed to load prompt template.');
     }
   }
 
@@ -71,6 +81,10 @@ export class OpenRouterProvider {
           HttpStatus.BAD_GATEWAY,
         );
       }
+
+      const responseTest = await this.aiResponseParserService.parse(choice);
+
+      console.log('Kamil | response: ', responseTest);
 
       return choice;
     } catch (err) {

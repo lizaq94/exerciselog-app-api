@@ -3,29 +3,37 @@ import { LoggerService } from '../../../logger/logger.service';
 import { AiResponseDto } from '../../dto/ai-response';
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
+import {
+  AI_PARSER_ERROR_MESSAGES,
+  AI_PARSER_LOG_MESSAGES,
+} from '../constants/ai-response-parser.constants';
 
 @Injectable()
 export class AiResponseParserService {
   constructor(private readonly logger: LoggerService) {}
 
   async parse(rawJson: string): Promise<AiResponseDto> {
-    this.logger.log('Parsing AI response...', AiResponseParserService.name);
+    this.logger.log(
+      AI_PARSER_LOG_MESSAGES.PARSING_START,
+      AiResponseParserService.name,
+    );
 
     if (!rawJson || rawJson.trim() === '') {
-      throw new BadRequestException(
-        'AI returned empty response. Please try again.',
-      );
+      throw new BadRequestException(AI_PARSER_ERROR_MESSAGES.EMPTY_RESPONSE);
     }
 
     try {
       const parsedJson = JSON.parse(rawJson);
-      this.logger.log('JSON parsed successfully', AiResponseParserService.name);
+      this.logger.log(
+        AI_PARSER_LOG_MESSAGES.JSON_PARSED,
+        AiResponseParserService.name,
+      );
 
       const sanitizedData = this.sanitizeResponse(parsedJson);
       const result = await this.validateStructure(sanitizedData);
 
       this.logger.log(
-        'AI response validated successfully',
+        AI_PARSER_LOG_MESSAGES.VALIDATION_SUCCESS,
         AiResponseParserService.name,
       );
 
@@ -37,9 +45,7 @@ export class AiResponseParserService {
       );
 
       if (error instanceof SyntaxError) {
-        throw new BadRequestException(
-          'AI returned invalid JSON. Please try again.',
-        );
+        throw new BadRequestException(AI_PARSER_ERROR_MESSAGES.INVALID_JSON);
       }
 
       throw error;
@@ -47,9 +53,7 @@ export class AiResponseParserService {
   }
 
   private async validateStructure(plainObject: any): Promise<AiResponseDto> {
-    const aiResponseDto = plainToClass(AiResponseDto, plainObject, {
-      enableImplicitConversion: true,
-    });
+    const aiResponseDto = plainToClass(AiResponseDto, plainObject);
 
     const errors = await validate(aiResponseDto, {
       whitelist: true,
@@ -63,7 +67,7 @@ export class AiResponseParserService {
         .flat();
 
       throw new BadRequestException({
-        message: 'AI response validation failed',
+        message: AI_PARSER_ERROR_MESSAGES.VALIDATION_FAILED,
         errors: validationErrors,
       });
     }

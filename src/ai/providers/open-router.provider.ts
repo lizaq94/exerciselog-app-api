@@ -10,7 +10,6 @@ import { lastValueFrom } from 'rxjs';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { AiResponseParserService } from '../services/ai-response-parser/ai-response-parser.service';
 import { LoggerService } from '../../logger/logger.service';
 
 @Injectable()
@@ -19,7 +18,6 @@ export class OpenRouterProvider {
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly aiResponseParserService: AiResponseParserService,
     private readonly logger: LoggerService,
   ) {
     this.loadPromptTemplate();
@@ -49,10 +47,17 @@ export class OpenRouterProvider {
     }
   }
 
-  public async generateWorkout(generateWorkoutDto: GenerateWorkoutDto) {
+  public async generateWorkout(
+    generateWorkoutDto: GenerateWorkoutDto,
+  ): Promise<string> {
     const finalPrompt = this.promptTemplate({
       ...generateWorkoutDto,
     });
+
+    this.logger.log(
+      'Sending request to OpenRouter API',
+      OpenRouterProvider.name,
+    );
 
     const url = `${process.env.OPEN_ROUTER_API_URL}/chat/completions`;
     const headers = {
@@ -76,18 +81,27 @@ export class OpenRouterProvider {
       const choice = response.data.choices[0]?.message?.content;
 
       if (!choice) {
+        this.logger.error(
+          'OpenRouter API returned empty response',
+          OpenRouterProvider.name,
+        );
         throw new HttpException(
           'OpenRouter API returned empty response - no workout content generated',
           HttpStatus.BAD_GATEWAY,
         );
       }
 
-      const responseTest = await this.aiResponseParserService.parse(choice);
-
-      console.log('Kamil | response: ', responseTest);
+      this.logger.log(
+        `Received response from OpenRouter API (length: ${choice.length} chars)`,
+        OpenRouterProvider.name,
+      );
 
       return choice;
     } catch (err) {
+      this.logger.error(
+        `OpenRouter API call failed: ${err.message}`,
+        OpenRouterProvider.name,
+      );
       if (err.response?.status === 401) {
         throw new HttpException(
           'OpenRouter API authentication failed - check your API key',

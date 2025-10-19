@@ -1,7 +1,7 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
 import { DatabaseService } from '../database/database.service';
@@ -13,6 +13,7 @@ import { UserEntity } from './entities/user.entity';
 import { Request } from 'express';
 import { HashingProvider } from '../auth/providers/hashing.provider';
 import { plainToInstance } from 'class-transformer';
+import { CreateWorkoutBulkDto } from '../workouts/dto/bulk';
 
 @Injectable()
 export class UsersService {
@@ -112,6 +113,57 @@ export class UsersService {
   async addWorkout(id: string, createWorkoutDto: CreateWorkoutDto) {
     await this.checkUserExists(id);
     return this.workoutService.create(id, createWorkoutDto);
+  }
+
+  async addWorkoutBulk(userId: string, dto: CreateWorkoutBulkDto) {
+    await this.checkUserExists(userId);
+
+    return this.databaseService.$transaction(async (tx) => {
+      const workout = await tx.workout.create({
+        data: {
+          name: dto.name,
+          notes: dto.notes,
+          duration: dto.duration,
+          date: new Date(),
+          userId: userId,
+        },
+      });
+
+      for (const exerciseDto of dto.exercises) {
+        await tx.exercise.create({
+          data: {
+            name: exerciseDto.name,
+            order: exerciseDto.order,
+            type: exerciseDto.type,
+            notes: exerciseDto.notes,
+            workoutId: workout.id,
+            sets: {
+              create: exerciseDto.sets.map((set) => ({
+                order: set.order,
+                repetitions: set.repetitions,
+                weight: set.weight,
+                durationInSeconds: set.durationInSeconds,
+                restAfterSetInSeconds: set.restAfterSetInSeconds,
+              })),
+            },
+          },
+        });
+      }
+
+      return tx.workout.findUnique({
+        where: { id: workout.id },
+        include: {
+          exercises: {
+            orderBy: { order: 'asc' },
+            include: {
+              sets: {
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+        },
+      });
+    });
   }
 
   private async checkUserExists(

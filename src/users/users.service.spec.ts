@@ -19,6 +19,7 @@ describe('UsersService', () => {
       findMany: jest.fn(),
       count: jest.fn(),
     },
+    $transaction: jest.fn(),
     workout: {
       findMany: jest.fn(),
       create: jest.fn(),
@@ -616,6 +617,246 @@ describe('UsersService', () => {
         select: { id: true },
       });
       expect(mockWorkoutsService.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('addWorkoutBulk', () => {
+    const mockCreateWorkoutBulkDto = {
+      name: 'Push Day - Upper Body',
+      notes: 'Focus on chest and triceps',
+      duration: 60,
+      exercises: [
+        {
+          order: 1,
+          name: 'Bench Press',
+          type: 'main',
+          notes: 'Keep back flat',
+          sets: [
+            {
+              order: 1,
+              repetitions: 10,
+              weight: 60,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+            },
+            {
+              order: 2,
+              repetitions: 8,
+              weight: 70,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+            },
+          ],
+        },
+        {
+          order: 2,
+          name: 'Dumbbell Press',
+          type: 'main',
+          notes: 'Control the movement',
+          sets: [
+            {
+              order: 1,
+              repetitions: 10,
+              weight: 20,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 60,
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockCreatedWorkout = {
+      id: 'workout-123',
+      name: 'Push Day - Upper Body',
+      notes: 'Focus on chest and triceps',
+      duration: 60,
+      date: new Date(),
+      userId: mockUserId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockCreatedExercise1 = {
+      id: 'exercise-1',
+      name: 'Bench Press',
+      order: 1,
+      type: 'main',
+      notes: 'Keep back flat',
+      workoutId: 'workout-123',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockCreatedExercise2 = {
+      id: 'exercise-2',
+      name: 'Dumbbell Press',
+      order: 2,
+      type: 'main',
+      notes: 'Control the movement',
+      workoutId: 'workout-123',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockWorkoutWithRelations = {
+      ...mockCreatedWorkout,
+      exercises: [
+        {
+          ...mockCreatedExercise1,
+          sets: [
+            {
+              id: 'set-1',
+              order: 1,
+              repetitions: 10,
+              weight: 60,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+              exerciseId: 'exercise-1',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: 'set-2',
+              order: 2,
+              repetitions: 8,
+              weight: 70,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+              exerciseId: 'exercise-1',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+        {
+          ...mockCreatedExercise2,
+          sets: [
+            {
+              id: 'set-3',
+              order: 1,
+              repetitions: 10,
+              weight: 20,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 60,
+              exerciseId: 'exercise-2',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should successfully create workout with exercises and sets', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue({ id: mockUserId });
+
+      let exerciseCreateCallCount = 0;
+      let setCreateCallCount = 0;
+
+      const mockTransaction = jest.fn(async (callback) => {
+        const mockTx = {
+          workout: {
+            create: jest.fn().mockResolvedValue(mockCreatedWorkout),
+            findUnique: jest.fn().mockResolvedValue(mockWorkoutWithRelations),
+          },
+          exercise: {
+            create: jest.fn().mockImplementation(() => {
+              exerciseCreateCallCount++;
+              return exerciseCreateCallCount === 1
+                ? mockCreatedExercise1
+                : mockCreatedExercise2;
+            }),
+          },
+          set: {
+            create: jest.fn().mockImplementation(() => {
+              setCreateCallCount++;
+              return { id: `set-${setCreateCallCount}` };
+            }),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      mockDatabaseService.$transaction = mockTransaction;
+
+      const result = await service.addWorkoutBulk(
+        mockUserId,
+        mockCreateWorkoutBulkDto,
+      );
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+
+      expect(mockTransaction).toHaveBeenCalledTimes(1);
+
+      expect(result).toEqual(mockWorkoutWithRelations);
+      expect(result.exercises).toHaveLength(2);
+      expect(result.exercises[0].sets).toHaveLength(2);
+      expect(result.exercises[1].sets).toHaveLength(1);
+
+      expect(result.exercises[0].name).toBe('Bench Press');
+      expect(result.exercises[0].order).toBe(1);
+      expect(result.exercises[1].name).toBe('Dumbbell Press');
+      expect(result.exercises[1].order).toBe(2);
+
+      expect(result.exercises[0].sets[0].repetitions).toBe(10);
+      expect(result.exercises[0].sets[0].weight).toBe(60);
+      expect(result.exercises[0].sets[1].repetitions).toBe(8);
+      expect(result.exercises[0].sets[1].weight).toBe(70);
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.addWorkoutBulk(mockUserId, mockCreateWorkoutBulkDto),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockDatabaseService.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should rollback transaction on error', async () => {
+      mockDatabaseService.user.findUnique.mockResolvedValue({ id: mockUserId });
+
+      const transactionError = new Error('Failed to create exercise');
+      const mockTransaction = jest.fn(async (callback) => {
+        const mockTx = {
+          workout: {
+            create: jest.fn().mockResolvedValue(mockCreatedWorkout),
+            findUnique: jest.fn(),
+          },
+          exercise: {
+            create: jest.fn().mockRejectedValue(transactionError),
+          },
+          set: {
+            create: jest.fn(),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      mockDatabaseService.$transaction = mockTransaction;
+
+      await expect(
+        service.addWorkoutBulk(mockUserId, mockCreateWorkoutBulkDto),
+      ).rejects.toThrow(transactionError);
+
+      expect(mockDatabaseService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: { id: true },
+      });
+      expect(mockTransaction).toHaveBeenCalledTimes(1);
     });
   });
 });

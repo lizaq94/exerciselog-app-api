@@ -29,7 +29,6 @@ export class AiService {
         `Successfully generated ${workoutPlans.length} workout plans`,
       );
 
-      console.log('Kamil | workoutPlans: ', workoutPlans);
       return workoutPlans;
     } catch (error) {
       const contextualError = new Error(

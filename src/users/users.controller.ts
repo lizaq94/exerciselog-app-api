@@ -27,6 +27,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LoggerService } from '../logger/logger.service';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
+import { CreateWorkoutBulkDto } from '../workouts/dto/bulk';
 import { GetWorkoutsDto } from '../workouts/dto/get-workouts.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -204,5 +205,83 @@ export class UsersController {
       UsersController.name,
     );
     return this.userService.addWorkout(id, createWorkoutDto);
+  }
+
+  @UseGuards(JwtAuthGuard, OwnershipGuard)
+  @ResourceType(Resource.USER)
+  @Post(':id/workouts/bulk')
+  @ApiOperation({
+    summary: 'Add a workout with exercises and sets in bulk to a user',
+  })
+  @ApiParam({
+    name: 'id',
+    description:
+      'The unique identifier of the user to whom the workout will be added',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    type: CreateWorkoutBulkDto,
+    description:
+      'The complete workout data including exercises and sets to add to a user',
+    examples: {
+      example1: {
+        value: {
+          name: 'Push Day - Upper Body',
+          notes: 'Focus on chest, shoulders, and triceps',
+          duration: 60,
+          exercises: [
+            {
+              order: 1,
+              name: 'Bench Press',
+              type: 'Strength',
+              notes: 'Warm up properly before heavy sets',
+              sets: [
+                {
+                  order: 1,
+                  repetitions: 10,
+                  weight: 60,
+                  restAfterSetInSeconds: 90,
+                },
+                {
+                  order: 2,
+                  repetitions: 8,
+                  weight: 70,
+                  restAfterSetInSeconds: 90,
+                },
+              ],
+            },
+            {
+              order: 2,
+              name: 'Overhead Press',
+              type: 'Strength',
+              notes: 'Keep core tight',
+              sets: [
+                {
+                  order: 1,
+                  repetitions: 10,
+                  weight: 40,
+                  restAfterSetInSeconds: 60,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    type: WorkoutResponseDto,
+    description:
+      'Adds a complete workout with exercises and sets to a user and returns the created workout entity',
+  })
+  addWorkoutBulk(
+    @Param('id') id: string,
+    @Body() createWorkoutBulkDto: CreateWorkoutBulkDto,
+  ) {
+    this.logger.log(
+      `Adding new bulk workout for user ID: ${id}`,
+      UsersController.name,
+    );
+    return this.userService.addWorkoutBulk(id, createWorkoutBulkDto);
   }
 }

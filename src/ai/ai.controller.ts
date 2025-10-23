@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { LoggerService } from '../logger/logger.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AiService } from './providers/ai.service';
@@ -14,6 +14,7 @@ export class AiController {
   ) {}
 
   @Post('generate-workout')
+  @HttpCode(200)
   @ApiOperation({
     summary: 'Generate workout plans using AI',
     description:

@@ -1,4 +1,4 @@
-import { CreateWorkoutDto } from '../../src/workouts/dtos/create-workout.dto';
+import { CreateWorkoutDto } from '../../src/workouts/dto/create-workout.dto';
 
 /**
  * Creates test workout data with optional suffix for uniqueness

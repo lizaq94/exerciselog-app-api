@@ -1,4 +1,4 @@
-import { CreateWorkoutDto } from '../../src/workouts/dtos/create-workout.dto';
+import { CreateWorkoutDto } from '../../src/workouts/dto/create-workout.dto';
 import { CreateExerciseDto } from '../../src/exercises/dto/create-exercise.dto';
 import { CreateSetDto } from '../../src/sets/dto/create-set.dto';
 

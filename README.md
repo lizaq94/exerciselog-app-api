@@ -17,6 +17,7 @@
 *   **Data Management (CRUD)**: Full support for operations on `Users`, `Workouts`, `Exercises`, and `Sets` entities.
 *   **File Uploads**: Ability to upload exercise images to **AWS S3**.
 *   **Email Notifications**: Automatic sending of a welcome email to newly registered users via `Nodemailer`.
+*   **AI Workout Generation**: Generate personalized workout plans using AI through **OpenRouter API** integration.
 *   **Database**: Integration with PostgreSQL through **Prisma ORM**, including a migration system for managing the database schema.
 *   **API Documentation**: Automatically generated **Swagger (OpenAPI)** documentation, available after running the application.
 *   **Validation & Error Handling**: Input data validation using `class-validator` and a global exception filter for consistent error handling.
@@ -36,6 +37,7 @@
 *   **API Documentation**: [Swagger](https://swagger.io/)
 *   **File Uploads**: [AWS SDK for S3](https://aws.amazon.com/sdk-for-javascript/)
 *   **Emailing**: [Nodemailer](https://nodemailer.com/)
+*   **AI Integration**: [OpenRouter API](https://openrouter.ai/)
 *   **Validation**: `class-validator`, `class-transformer`
 *   **Testing**: [Jest](https://jestjs.io/)
 *   **Linting/Formatting**: ESLint, Prettier
@@ -151,6 +153,10 @@ AWS_ACCESS_KEY_ID=your_access_key_id  # AWS access key
 AWS_SECRET_ACCESS_KEY=your_secret_access_key # AWS secret access key
 AWS_PUBLIC_BUCKET_NAME=your_bucket_name # S3 bucket name
 AWS_CLOUDFRONT_URL=https://your-distribution.cloudfront.net # Optional: CloudFront distribution URL
+
+# OpenRouter Configuration
+OPEN_ROUTER_API_KEY=your_api_key      # OpenRouter API key for AI workout generation
+OPEN_ROUTER_API_URL=https://openrouter.ai/api/v1 # OpenRouter API base URL
 ```
 
 ## 📜 License

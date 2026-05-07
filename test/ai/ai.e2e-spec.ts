@@ -39,9 +39,10 @@ describe('AiController (e2e)', () => {
   describe('/ai/generate-workout (POST)', () => {
     // Note: This test is skipped because it can take 60-100+ seconds due to AI API response time.
     it.skip('should generate workout plan when provided with valid input data', async () => {
+      const { agent } = await setupSingleUser(server);
       const generateWorkoutData = createTestGenerateWorkoutData();
 
-      const response = await request(server)
+      const response = await agent
         .post('/ai/generate-workout')
         .send(generateWorkoutData)
         .expect(200);
@@ -68,16 +69,15 @@ describe('AiController (e2e)', () => {
     }, 90000);
 
     it('should throw validation error when provided with invalid data', async () => {
+      const { agent } = await setupSingleUser(server);
+
       const invalidData = {
         goal: '',
         experienceLevel: 'invalid',
         daysPerWeek: -1,
       };
 
-      await request(server)
-        .post('/ai/generate-workout')
-        .send(invalidData)
-        .expect(400);
+      await agent.post('/ai/generate-workout').send(invalidData).expect(400);
     });
   });
 

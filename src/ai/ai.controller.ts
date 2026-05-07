@@ -1,10 +1,12 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { LoggerService } from '../logger/logger.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AiService } from './providers/ai.service';
 import { GenerateWorkoutDto } from './dto/generate-workout.dto';
 import { CreateWorkoutBulkDto } from '../workouts/dto/bulk';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('ai')
 @ApiTags('AI')
 export class AiController {

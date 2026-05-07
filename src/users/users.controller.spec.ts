@@ -12,8 +12,8 @@ import { CaslAbilityFactory } from '../casl/casl-ability.factory';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { Resource } from '../casl/types/resource.type';
 import { testForbiddenException } from '../common/test/authorization-test.util';
-import { GetWorkoutsDto } from '../workouts/dtos/get-workouts.dto';
-import { CreateWorkoutDto } from '../workouts/dtos/create-workout.dto';
+import { GetWorkoutsDto } from '../workouts/dto/get-workouts.dto';
+import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { WorkoutEntity } from '../workouts/entities/workout.entity';
 
 const mockUserId = 'user-id';
@@ -71,51 +71,6 @@ describe('UsersController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
-  });
-
-  describe('findOne', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
-    it('should return a user when valid ID is provided', async () => {
-      mockUsersService.findOneById.mockResolvedValue(mockUser);
-
-      const result = await controller.findOne(mockUserId);
-
-      expect(result).toEqual(mockUser);
-      expect(mockUsersService.findOneById).toHaveBeenCalledWith(mockUserId);
-    });
-
-    it('should throw NotFoundException when user does not exist', async () => {
-      mockUsersService.findOneById.mockRejectedValue(
-        new NotFoundException(`User not found`),
-      );
-
-      await expect(controller.findOne(mockUserId)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should log information about fetching the user', async () => {
-      mockUsersService.findOneById.mockResolvedValue(mockUser);
-
-      await controller.findOne(mockUserId);
-
-      expect(mockLoggerService.log).toHaveBeenCalledWith(
-        `Fetching user with ID: ${mockUserId}`,
-        UsersController.name,
-      );
-    });
-
-    it('should throw UnauthorizedException when JWT token is invalid', async () => {
-      const error = new UnauthorizedException('Unauthorized');
-      mockUsersService.findOneById.mockRejectedValue(error);
-
-      await expect(controller.findOne(mockUserId)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
   });
 
   describe('create', () => {

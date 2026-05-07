@@ -40,6 +40,7 @@ describe('AllExceptionsFilter', () => {
           provide: LoggerService,
           useValue: {
             error: jest.fn(),
+            warn: jest.fn(),
           },
         },
       ],
@@ -75,10 +76,11 @@ describe('AllExceptionsFilter', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse);
 
-      expect(logger.error).toHaveBeenCalledWith(
-        'Test error message',
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Expected test error: "Test error message"',
         AllExceptionsFilter.name,
       );
+      expect(logger.error).not.toHaveBeenCalled();
     });
 
     it('should handle PrismaClientValidationError with status 422, set response, and log the error', async () => {

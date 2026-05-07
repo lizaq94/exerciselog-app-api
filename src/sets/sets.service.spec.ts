@@ -30,6 +30,8 @@ describe('SetsService', () => {
     exerciseId: mockExerciseId,
     createdAt: new Date('2025-01-01T12:34:56.789Z'),
     updatedAt: new Date('2025-01-15T08:21:45.123Z'),
+    durationInSeconds: 60,
+    restAfterSetInSeconds: 60,
   };
 
   const mockCreateSetDto: CreateSetDto = {

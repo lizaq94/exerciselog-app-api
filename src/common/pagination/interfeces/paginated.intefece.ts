@@ -1,4 +1,4 @@
-import { PaginatorTypes } from '@nodeteam/nestjs-prisma-pagination';
+import { PaginatorTypes } from '../paginator';
 
 export interface PaginatedResult<T> extends PaginatorTypes.PaginatedResult<T> {
   links: {

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { paginator, PaginatorTypes } from '@nodeteam/nestjs-prisma-pagination';
+import { paginator, PaginatorTypes } from '../common/pagination/paginator';
 import { Request } from 'express';
 import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
 import { PaginatedResult } from '../common/pagination/interfeces/paginated.intefece';

@@ -121,10 +121,6 @@ describe('WorkoutsService', () => {
     };
 
     it('should return paginated workouts for a given user', async () => {
-      jest.mock('@nodeteam/nestjs-prisma-pagination', () => ({
-        paginator: jest.fn().mockReturnValue(() => mockPaginationResult),
-      }));
-
       mockPaginationProvider.generatePaginationLinks.mockReturnValue(mockLinks);
 
       mockDatabaseService.workout.findMany.mockResolvedValue(mockWorkoutsData);
@@ -174,12 +170,6 @@ describe('WorkoutsService', () => {
         next: 'http://localhost:3000/workouts?page=3&limit=5',
         previous: 'http://localhost:3000/workouts?page=1&limit=5',
       };
-
-      jest.mock('@nodeteam/nestjs-prisma-pagination', () => ({
-        paginator: jest
-          .fn()
-          .mockReturnValue(() => paginationResultWithoutLinks),
-      }));
 
       mockDatabaseService.workout.findMany.mockResolvedValue(mockWorkoutData);
       mockDatabaseService.workout.count.mockResolvedValue(15);
@@ -246,10 +236,6 @@ describe('WorkoutsService', () => {
         next: null,
         previous: null,
       };
-
-      jest.mock('@nodeteam/nestjs-prisma-pagination', () => ({
-        paginator: jest.fn().mockReturnValue(() => emptyPaginationResult),
-      }));
 
       mockDatabaseService.workout.findMany.mockResolvedValue(emptyData);
       mockDatabaseService.workout.count.mockResolvedValue(0);

@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { MailService } from './provider/mail.service';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { join } from 'path';
-import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
+import { EjsAdapter } from '@nestjs-modules/mailer/adapters/ejs.adapter';
 import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '../config/config.service';
 

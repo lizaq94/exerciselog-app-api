@@ -1,0 +1,14 @@
+# Default: treat all files as text and normalize to LF on commit & checkout
+* text=auto eol=lf
+
+# Explicitly binary (no diff/merge as text, no eol conversion)
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.tar   binary

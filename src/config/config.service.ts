@@ -31,6 +31,11 @@ interface AwsConfig {
   cloudFrontUrl: string;
 }
 
+interface AiConfig {
+  openRouterApiKey: string;
+  openRouterApiUrl: string;
+}
+
 @Injectable()
 export class ConfigService {
   constructor(private configService: NestConfigService) {}
@@ -107,4 +112,16 @@ export class ConfigService {
       cloudFrontUrl: this.get<string>('AWS_CLOUDFRONT_URL', ''),
     };
   }
+
+  /**
+   * Gets OpenRouter configuration
+   */
+  getAiConfig(): AiConfig {
+    return {
+      openRouterApiKey: this.get<string>('OPEN_ROUTER_API_KEY', ''),
+      openRouterApiUrl: this.get<string>('OPEN_ROUTER_API_URL', ''),
+    };
+  }
 }
+
+export default ConfigService;

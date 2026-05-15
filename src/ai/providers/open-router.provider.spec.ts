@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenRouterProvider } from './open-router.provider';
 import { AiService } from './ai.service';
 import { LoggerService } from '../../logger/logger.service';
+import ConfigService from '../../config/config.service';
 
 describe('OpenRouterProviderTsService', () => {
   let service: OpenRouterProvider;
@@ -20,12 +21,17 @@ describe('OpenRouterProviderTsService', () => {
     generateWorkout: jest.fn(),
   };
 
+  const mockConfigService = {
+    getAiConfig: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         { provide: AiService, useValue: mockAiService },
         { provide: OpenRouterProvider, useValue: mockOpenRouterProvider },
         { provide: LoggerService, useValue: mockLoggerService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 

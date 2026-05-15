@@ -34,6 +34,12 @@ import * as Joi from 'joi';
         AWS_SECRET_ACCESS_KEY: Joi.string().required(),
         AWS_PUBLIC_BUCKET_NAME: Joi.string().required(),
         AWS_CLOUDFRONT_URL: Joi.string().required(),
+
+        // OpenRouter variables
+        OPEN_ROUTER_API_KEY: Joi.string().required(),
+        OPEN_ROUTER_API_URL: Joi.string()
+          .uri()
+          .default('https://openrouter.ai/api/v1'),
       }),
       validationOptions: {
         allowUnknown: true,

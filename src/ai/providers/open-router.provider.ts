@@ -11,6 +11,7 @@ import * as Handlebars from 'handlebars';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { LoggerService } from '../../logger/logger.service';
+import ConfigService from '../../config/config.service';
 
 @Injectable()
 export class OpenRouterProvider {
@@ -19,6 +20,7 @@ export class OpenRouterProvider {
   constructor(
     private readonly httpService: HttpService,
     private readonly logger: LoggerService,
+    private readonly configService: ConfigService,
   ) {
     this.loadPromptTemplate();
   }
@@ -53,15 +55,16 @@ export class OpenRouterProvider {
     const finalPrompt = this.promptTemplate({
       ...generateWorkoutDto,
     });
+    const aiConfig = this.configService.getAiConfig();
 
     this.logger.log(
       'Sending request to OpenRouter API',
       OpenRouterProvider.name,
     );
 
-    const url = `${process.env.OPEN_ROUTER_API_URL}/chat/completions`;
+    const url = `${aiConfig.openRouterApiUrl}/chat/completions`;
     const headers = {
-      Authorization: `Bearer ${process.env.OPEN_ROUTER_API_KEY}`,
+      Authorization: `Bearer ${aiConfig.openRouterApiKey}`,
       'Content-Type': 'application/json',
     };
     const payload = {

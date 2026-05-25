@@ -69,7 +69,7 @@ export class AuthService {
       expireRefreshToken,
     );
 
-    if (process.env.NODE_ENV === 'production') {
+    if (this.configService.getAppConfig().nodeEnv === 'production') {
       try {
         await this.mailService.sendUserWelcome(newUser);
       } catch (error) {
@@ -133,15 +133,18 @@ export class AuthService {
       refreshToken: await this.hashingProvider.encrypt(refreshToken),
     });
 
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction =
+      this.configService.getAppConfig().nodeEnv === 'production';
 
     response.cookie(this.ACCESS_TOKEN_COOKIE, accessToken, {
+      sameSite: 'lax',
       httpOnly: true,
       secure: isProduction,
       expires: expireAccessToken,
     });
 
     response.cookie(this.REFRESH_TOKEN_COOKIE, refreshToken, {
+      sameSite: 'lax',
       httpOnly: true,
       secure: isProduction,
       expires: expireRefreshToken,

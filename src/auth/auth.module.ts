@@ -8,10 +8,9 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { HashingProvider } from './providers/hashing.provider';
-import { BcryptProvider } from './providers/bcrypt.provider';
 import { MailModule } from '../mail/mail.module';
 import { ConfigModule } from '../config/config.module';
+import { HashingModule } from '../common/hashing/hashing.module';
 
 @Module({
   imports: [
@@ -21,18 +20,9 @@ import { ConfigModule } from '../config/config.module';
     ConfigModule,
     LoggerModule,
     MailModule,
+    HashingModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    LocalStrategy,
-    JwtStrategy,
-    JwtRefreshStrategy,
-    {
-      provide: HashingProvider,
-      useClass: BcryptProvider,
-    },
-  ],
-  exports: [HashingProvider],
+  providers: [AuthService, LocalStrategy, JwtStrategy, JwtRefreshStrategy],
 })
 export class AuthModule {}

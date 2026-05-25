@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { DatabaseService } from '../database/database.service';
-import { HashingProvider } from '../auth/providers/hashing.provider';
 import { WorkoutsService } from '../workouts/workouts.service';
 import { NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserEntity } from './entities/user.entity';
+import { HashingProvider } from '../common/hashing/hashing.provider';
 
 describe('UsersService', () => {
   let service: UsersService;

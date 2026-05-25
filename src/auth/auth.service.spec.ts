@@ -3,12 +3,13 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '../config/config.service';
-import { HashingProvider } from './providers/hashing.provider';
 import { MailService } from '../mail/provider/mail.service';
 import { UnauthorizedException, RequestTimeoutException } from '@nestjs/common';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
+import { HashingProvider } from '../common/hashing/hashing.provider';
+import { LoggerService } from '../logger/logger.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -18,6 +19,7 @@ describe('AuthService', () => {
   let mockHashingProvider: jest.Mocked<HashingProvider>;
   let mockMailService: jest.Mocked<MailService>;
   let mockResponse: Partial<Response>;
+  let mockLoggerService: jest.Mocked<LoggerService>;
 
   const mockUser: UserEntity = {
     id: '1',
@@ -37,6 +39,20 @@ describe('AuthService', () => {
     jwtRefreshTokenExpiration: '604800000',
   };
 
+  const mockAppConfig = {
+    nodeEnv: 'test',
+    port: 3000,
+    databaseUrl: 'postgres://test',
+    version: '1.0.0',
+  };
+
+  const mockLoggerServiceFactory = () => ({
+    log: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  });
+
   beforeEach(async () => {
     const mockUsersServiceFactory = () => ({
       findOne: jest.fn(),
@@ -51,6 +67,7 @@ describe('AuthService', () => {
 
     const mockConfigServiceFactory = () => ({
       getAuthConfig: jest.fn(),
+      getAppConfig: jest.fn(),
     });
 
     const mockHashingProviderFactory = () => ({
@@ -85,6 +102,10 @@ describe('AuthService', () => {
           provide: MailService,
           useFactory: mockMailServiceFactory,
         },
+        {
+          provide: LoggerService,
+          useFactory: mockLoggerServiceFactory,
+        },
       ],
     }).compile();
 
@@ -94,6 +115,7 @@ describe('AuthService', () => {
     mockConfigService = module.get(ConfigService);
     mockHashingProvider = module.get(HashingProvider);
     mockMailService = module.get(MailService);
+    mockLoggerService = module.get(LoggerService);
 
     mockResponse = {
       cookie: jest.fn(),
@@ -101,6 +123,7 @@ describe('AuthService', () => {
     };
 
     mockConfigService.getAuthConfig.mockReturnValue(mockAuthConfig);
+    mockConfigService.getAppConfig.mockReturnValue(mockAppConfig);
   });
 
   afterEach(() => {
@@ -119,43 +142,40 @@ describe('AuthService', () => {
     };
 
     it('should create a new user, generate tokens, set cookies, and send a welcome email', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
-      try {
-        const newUser = { ...mockUser, id: '2', email: createUserDto.email };
+      mockConfigService.getAppConfig.mockReturnValue({
+        ...mockAppConfig,
+        nodeEnv: 'production',
+      });
 
-        mockUsersService.create.mockResolvedValue(newUser);
-        mockUsersService.update.mockResolvedValue(newUser);
-        mockJwtService.sign
-          .mockReturnValueOnce('access-token')
-          .mockReturnValueOnce('refresh-token');
-        mockHashingProvider.encrypt.mockResolvedValue('hashedRefreshToken');
-        mockMailService.sendUserWelcome.mockResolvedValue(undefined);
+      const newUser = { ...mockUser, id: '2', email: createUserDto.email };
 
-        await service.signup(createUserDto, mockResponse as Response);
+      mockUsersService.create.mockResolvedValue(newUser);
+      mockUsersService.update.mockResolvedValue(newUser);
+      mockJwtService.sign
+        .mockReturnValueOnce('access-token')
+        .mockReturnValueOnce('refresh-token');
+      mockHashingProvider.encrypt.mockResolvedValue('hashedRefreshToken');
+      mockMailService.sendUserWelcome.mockResolvedValue(undefined);
 
-        expect(mockUsersService.create).toHaveBeenCalledWith(createUserDto);
-        expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
-        expect(mockHashingProvider.encrypt).toHaveBeenCalledWith(
-          'refresh-token',
-        );
-        expect(mockUsersService.update).toHaveBeenCalledWith(newUser.id, {
-          refreshToken: 'hashedRefreshToken',
-        });
-        expect(mockResponse.cookie).toHaveBeenCalledWith(
-          'Authentication',
-          'access-token',
-          expect.any(Object),
-        );
-        expect(mockResponse.cookie).toHaveBeenCalledWith(
-          'Refresh',
-          'refresh-token',
-          expect.any(Object),
-        );
-        expect(mockMailService.sendUserWelcome).toHaveBeenCalledWith(newUser);
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-      }
+      await service.signup(createUserDto, mockResponse as Response);
+
+      expect(mockUsersService.create).toHaveBeenCalledWith(createUserDto);
+      expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
+      expect(mockHashingProvider.encrypt).toHaveBeenCalledWith('refresh-token');
+      expect(mockUsersService.update).toHaveBeenCalledWith(newUser.id, {
+        refreshToken: 'hashedRefreshToken',
+      });
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'Authentication',
+        'access-token',
+        expect.any(Object),
+      );
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'Refresh',
+        'refresh-token',
+        expect.any(Object),
+      );
+      expect(mockMailService.sendUserWelcome).toHaveBeenCalledWith(newUser);
     });
 
     it('should throw UnauthorizedException if a user with the given email already exists', async () => {
@@ -172,29 +192,28 @@ describe('AuthService', () => {
     });
 
     it('should throw RequestTimeoutException if MailService fails', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
-      try {
-        const newUser = { ...mockUser, id: '2', email: createUserDto.email };
-        const mailError = new Error('Mail service error');
+      mockConfigService.getAppConfig.mockReturnValue({
+        ...mockAppConfig,
+        nodeEnv: 'production',
+      });
 
-        mockUsersService.findOne.mockResolvedValue(null);
-        mockUsersService.create.mockResolvedValue(newUser);
-        mockUsersService.update.mockResolvedValue(newUser);
-        mockJwtService.sign
-          .mockReturnValueOnce('access-token')
-          .mockReturnValueOnce('refresh-token');
-        mockHashingProvider.encrypt.mockResolvedValue('hashedRefreshToken');
-        mockMailService.sendUserWelcome.mockRejectedValue(mailError);
+      const newUser = { ...mockUser, id: '2', email: createUserDto.email };
+      const mailError = new Error('Mail service error');
 
-        await expect(
-          service.signup(createUserDto, mockResponse as Response),
-        ).rejects.toThrow(new RequestTimeoutException(mailError));
+      mockUsersService.findOne.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue(newUser);
+      mockUsersService.update.mockResolvedValue(newUser);
+      mockJwtService.sign
+        .mockReturnValueOnce('access-token')
+        .mockReturnValueOnce('refresh-token');
+      mockHashingProvider.encrypt.mockResolvedValue('hashedRefreshToken');
+      mockMailService.sendUserWelcome.mockRejectedValue(mailError);
 
-        expect(mockMailService.sendUserWelcome).toHaveBeenCalledWith(newUser);
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-      }
+      await expect(
+        service.signup(createUserDto, mockResponse as Response),
+      ).rejects.toThrow(new RequestTimeoutException(mailError));
+
+      expect(mockMailService.sendUserWelcome).toHaveBeenCalledWith(newUser);
     });
   });
 
@@ -285,6 +304,7 @@ describe('AuthService', () => {
         password,
         mockUser.password,
       );
+      expect(mockLoggerService.error).toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException if user is not found', async () => {
@@ -296,6 +316,7 @@ describe('AuthService', () => {
 
       expect(mockUsersService.findOne).toHaveBeenCalledWith(email);
       expect(mockHashingProvider.compareValueWithHash).not.toHaveBeenCalled();
+      expect(mockLoggerService.error).toHaveBeenCalled();
     });
   });
 
@@ -332,6 +353,7 @@ describe('AuthService', () => {
         refreshToken,
         mockUser.refreshToken,
       );
+      expect(mockLoggerService.error).toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException if the user associated with the token is not found', async () => {
@@ -347,6 +369,7 @@ describe('AuthService', () => {
 
       expect(mockUsersService.findOneById).toHaveBeenCalledWith(userId);
       expect(mockHashingProvider.compareValueWithHash).not.toHaveBeenCalled();
+      expect(mockLoggerService.error).toHaveBeenCalled();
     });
   });
 });

@@ -11,9 +11,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { Request } from 'express';
-import { HashingProvider } from '../auth/providers/hashing.provider';
 import { plainToInstance } from 'class-transformer';
 import { CreateWorkoutBulkDto } from '../workouts/dto/bulk';
+import { HashingProvider } from '../common/hashing/hashing.provider';
 
 @Injectable()
 export class UsersService {

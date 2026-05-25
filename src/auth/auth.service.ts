@@ -9,9 +9,10 @@ import { JwtService } from '@nestjs/jwt';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
-import { HashingProvider } from './providers/hashing.provider';
 import { MailService } from '../mail/provider/mail.service';
 import { ConfigService } from '../config/config.service';
+import { HashingProvider } from '../common/hashing/hashing.provider';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly hashingProvider: HashingProvider,
     private readonly mailService: MailService,
+    private readonly logger: LoggerService,
   ) {}
 
   async login(user: UserEntity, response: Response) {
@@ -170,6 +172,10 @@ export class AuthService {
 
       return user;
     } catch (error) {
+      this.logger.error(
+        `User validation failed: ${error?.stack}`,
+        AuthService.name,
+      );
       throw new UnauthorizedException('Credentials are not valid.');
     }
   }
@@ -193,6 +199,10 @@ export class AuthService {
 
       return user;
     } catch (error) {
+      this.logger.error(
+        `Refresh token verification failed: ${error?.stack}`,
+        AuthService.name,
+      );
       throw new UnauthorizedException('Refresh token is not valid.');
     }
   }

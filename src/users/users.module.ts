@@ -5,6 +5,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthModule } from '../auth/auth.module';
 import { CaslModule } from '../casl/casl.module';
+import { HashingModule } from '../common/hashing/hashing.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { CaslModule } from '../casl/casl.module';
     LoggerModule,
     forwardRef(() => AuthModule),
     forwardRef(() => CaslModule),
+    HashingModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],

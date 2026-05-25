@@ -19,7 +19,7 @@ import * as Joi from 'joi';
 
         // JWT variables
         JWT_ACCESS_TOKEN_SECRET: Joi.string().required(),
-        JWT_ACCESS_TOKEN_EXPIRATION_MS: Joi.string().default('86400000'),
+        JWT_ACCESS_TOKEN_EXPIRATION_MS: Joi.string().default('900000'),
         JWT_REFRESH_TOKEN_SECRET: Joi.string().required(),
         JWT_REFRESH_TOKEN_EXPIRATION_MS: Joi.string().default('604800000'),
 

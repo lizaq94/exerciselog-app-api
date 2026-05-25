@@ -56,10 +56,7 @@ export class ConfigService {
     return {
       nodeEnv: this.get<string>('NODE_ENV', 'development'),
       port: this.get<number>('PORT', 3000),
-      databaseUrl: this.get<string>(
-        'DATABASE_URL',
-        'postgresql://postgres:postgres@localhost:5432/exerciselog',
-      ),
+      databaseUrl: this.get<string>('DATABASE_URL'),
       version: this.get<string>('APP_VERSION', '1.0.0'),
     };
   }
@@ -69,18 +66,12 @@ export class ConfigService {
    */
   getAuthConfig(): AuthConfig {
     return {
-      jwtAccessTokenSecret: this.get<string>(
-        'JWT_ACCESS_TOKEN_SECRET',
-        'supersecretkey_for_development_only',
-      ),
+      jwtAccessTokenSecret: this.get<string>('JWT_ACCESS_TOKEN_SECRET'),
       jwtAccessTokenExpiration: this.get<string>(
         'JWT_ACCESS_TOKEN_EXPIRATION_MS',
-        '86400000',
+        '900000',
       ),
-      jwtRefreshTokenSecret: this.get<string>(
-        'JWT_REFRESH_TOKEN_SECRET',
-        'supersecretrefreshkey_for_development_only',
-      ),
+      jwtRefreshTokenSecret: this.get<string>('JWT_REFRESH_TOKEN_SECRET'),
       jwtRefreshTokenExpiration: this.get<string>(
         'JWT_REFRESH_TOKEN_EXPIRATION_MS',
         '604800000',

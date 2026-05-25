@@ -1,8 +1,9 @@
 import { ForbiddenException } from '@nestjs/common';
-import { ModuleRef, Reflector } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 import { Action } from '../../casl/casl-ability.factory';
 import { OwnershipGuard } from '../../casl/guards/ownership.guard';
 import { Resource } from '../../casl/types/resource.type';
+import { DatabaseService } from '../../database/database.service';
 
 /**
  * Universal test function to verify ForbiddenException functionality
@@ -10,8 +11,8 @@ import { Resource } from '../../casl/types/resource.type';
  *
  * @param operation - Controller function to test
  * @param id - Resource ID
- * @param serviceName - Service class name to find the resource (e.g. SetsService)
- * @param mockService - Service mock
+ * @param serviceName - Deprecated/unused; kept for backward compatibility with existing call sites
+ * @param mockService - Deprecated/unused; kept for backward compatibility with existing call sites
  * @param resourceType - Resource type from Resource enum
  * @param dto - Optional data for operations that require DTO
  * @returns Promise<void>
@@ -30,13 +31,9 @@ export const testForbiddenException = async (
     userId: 'different-user-id',
   };
 
-  const mockModuleRef = {
-    resolve: jest.fn().mockImplementation((service) => {
-      if (service === serviceName) {
-        return Promise.resolve(mockService);
-      }
-      throw new Error(`Unexpected service: ${service}`);
-    }),
+  const findUnique = jest.fn().mockResolvedValue(anotherUserResource);
+  const mockDatabaseService = {
+    [resourceType.toLowerCase()]: { findUnique },
   };
 
   const mockAbility = { can: jest.fn().mockReturnValue(false) };
@@ -57,22 +54,10 @@ export const testForbiddenException = async (
   const mockReflector = new Reflector();
   jest.spyOn(mockReflector, 'get').mockReturnValue(resourceType);
 
-  if (resourceType === Resource.USER) {
-    if (!mockService.findOneById) {
-      mockService.findOneById = jest.fn();
-    }
-    mockService.findOneById.mockResolvedValue(anotherUserResource);
-  } else {
-    if (!mockService.findOne) {
-      mockService.findOne = jest.fn();
-    }
-    mockService.findOne.mockResolvedValue(anotherUserResource);
-  }
-
   const ownershipGuard = new OwnershipGuard(
     mockReflector,
     caslAbilityFactory,
-    mockModuleRef as unknown as ModuleRef,
+    mockDatabaseService as unknown as DatabaseService,
   );
 
   await expect(async () => {
@@ -85,16 +70,10 @@ export const testForbiddenException = async (
     return dto ? operation(id, dto) : operation(id);
   }).rejects.toThrow(ForbiddenException);
 
-  if (resourceType === Resource.USER) {
-    expect(mockService.findOneById).toHaveBeenCalledWith(id);
-  } else {
-    expect(mockService.findOne).toHaveBeenCalledWith(id);
-  }
-
+  expect(findUnique).toHaveBeenCalledWith({ where: { id } });
   expect(caslAbilityFactory.defineAbility).toHaveBeenCalledWith(testUser);
   expect(mockAbility.can).toHaveBeenCalledWith(
     Action.Manage,
     expect.any(Object),
   );
-  expect(mockModuleRef.resolve).toHaveBeenCalledWith(serviceName);
 };

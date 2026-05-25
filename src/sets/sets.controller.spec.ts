@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CaslAbilityFactory } from '../casl/casl-ability.factory';
 import { Resource } from '../casl/types/resource.type';
+import { DatabaseService } from '../database/database.service';
 import { LoggerService } from '../logger/logger.service';
 import { SetsController } from './sets.controller';
 import { SetsService } from './sets.service';
@@ -47,6 +48,15 @@ describe('SetsController', () => {
         { provide: CaslAbilityFactory, useValue: mockCaslAbilityFactory },
         { provide: SetsService, useValue: mockSetsService },
         { provide: LoggerService, useValue: mockLoggerService },
+        {
+          provide: DatabaseService,
+          useValue: {
+            user: { findUnique: jest.fn() },
+            workout: { findUnique: jest.fn() },
+            exercise: { findUnique: jest.fn() },
+            set: { findUnique: jest.fn() },
+          },
+        },
       ],
     }).compile();
 

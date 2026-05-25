@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CaslAbilityFactory } from '../casl/casl-ability.factory';
 import { Resource } from '../casl/types/resource.type';
 import { testForbiddenException } from '../common/test/authorization-test.util';
+import { DatabaseService } from '../database/database.service';
 import { LoggerService } from '../logger/logger.service';
 import { WorkoutsController } from './workouts.controller';
 import { WorkoutsService } from './workouts.service';
@@ -44,6 +45,15 @@ describe('WorkoutsController', () => {
         { provide: CaslAbilityFactory, useValue: mockCaslAbilityFactory },
         { provide: WorkoutsService, useValue: mockWorkoutsService },
         { provide: LoggerService, useValue: mockLoggerService },
+        {
+          provide: DatabaseService,
+          useValue: {
+            user: { findUnique: jest.fn() },
+            workout: { findUnique: jest.fn() },
+            exercise: { findUnique: jest.fn() },
+            set: { findUnique: jest.fn() },
+          },
+        },
       ],
     }).compile();
 

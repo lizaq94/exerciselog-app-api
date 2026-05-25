@@ -1,29 +1,30 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ExecutionContext } from '@nestjs/common';
-import { ModuleRef, Reflector } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CaslAbilityFactory, Action } from '../casl-ability.factory';
 import { RESOURCE_TYPE_KEY } from '../decorators/resource-type.decorator';
 import { Resource } from '../types/resource.type';
 import { OwnershipGuard } from './ownership.guard';
-import { WorkoutsService } from '../../workouts/workouts.service';
-import { ExercisesService } from '../../exercises/exercises.service';
-import { SetsService } from '../../sets/sets.service';
-import { UsersService } from '../../users/users.service';
+import { DatabaseService } from '../../database/database.service';
 import { WorkoutEntity } from '../../workouts/entities/workout.entity';
 import { ExerciseEntity } from '../../exercises/entities/exercise.entity';
 import { SetEntity } from '../../sets/entities/set.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
+type FindUniqueDelegate = { findUnique: jest.Mock };
+type MockDatabaseService = {
+  workout: FindUniqueDelegate;
+  exercise: FindUniqueDelegate;
+  set: FindUniqueDelegate;
+  user: FindUniqueDelegate;
+};
+
 describe('OwnershipGuard', () => {
   let guard: OwnershipGuard;
   let reflector: jest.Mocked<Reflector>;
   let caslAbilityFactory: jest.Mocked<CaslAbilityFactory>;
-  let moduleRef: jest.Mocked<ModuleRef>;
-  let workoutsService: jest.Mocked<WorkoutsService>;
-  let exercisesService: jest.Mocked<ExercisesService>;
-  let setsService: jest.Mocked<SetsService>;
-  let usersService: jest.Mocked<UsersService>;
+  let databaseService: MockDatabaseService;
   let executionContext: jest.Mocked<ExecutionContext>;
   let mockRequest: any;
   let testUser: UserEntity;
@@ -58,22 +59,6 @@ describe('OwnershipGuard', () => {
       params: { id: 'resource-1' },
     };
 
-    const mockWorkoutsService = {
-      findOne: jest.fn(),
-    };
-
-    const mockExercisesService = {
-      findOne: jest.fn(),
-    };
-
-    const mockSetsService = {
-      findOne: jest.fn(),
-    };
-
-    const mockUsersService = {
-      findOneById: jest.fn(),
-    };
-
     const mockReflector = {
       get: jest.fn(),
     };
@@ -82,8 +67,11 @@ describe('OwnershipGuard', () => {
       defineAbility: jest.fn(),
     };
 
-    const mockModuleRef = {
-      resolve: jest.fn(),
+    const mockDatabaseService: MockDatabaseService = {
+      workout: { findUnique: jest.fn() },
+      exercise: { findUnique: jest.fn() },
+      set: { findUnique: jest.fn() },
+      user: { findUnique: jest.fn() },
     };
 
     const mockExecutionContext = {
@@ -98,36 +86,20 @@ describe('OwnershipGuard', () => {
         OwnershipGuard,
         { provide: Reflector, useValue: mockReflector },
         { provide: CaslAbilityFactory, useValue: mockCaslAbilityFactory },
-        { provide: ModuleRef, useValue: mockModuleRef },
-        { provide: WorkoutsService, useValue: mockWorkoutsService },
-        { provide: ExercisesService, useValue: mockExercisesService },
-        { provide: SetsService, useValue: mockSetsService },
-        { provide: UsersService, useValue: mockUsersService },
+        { provide: DatabaseService, useValue: mockDatabaseService },
       ],
     }).compile();
 
     guard = module.get<OwnershipGuard>(OwnershipGuard);
     reflector = module.get(Reflector);
     caslAbilityFactory = module.get(CaslAbilityFactory);
-    moduleRef = module.get(ModuleRef);
-    workoutsService = module.get(WorkoutsService);
-    exercisesService = module.get(ExercisesService);
-    setsService = module.get(SetsService);
-    usersService = module.get(UsersService);
+    databaseService = mockDatabaseService;
     executionContext = mockExecutionContext as any;
 
     reflector.get.mockReturnValue(Resource.WORKOUT);
     caslAbilityFactory.defineAbility.mockReturnValue(mockAbility);
     mockAbility.can.mockReturnValue(true);
-    moduleRef.resolve.mockImplementation((service) => {
-      if (service === WorkoutsService) return Promise.resolve(workoutsService);
-      if (service === ExercisesService)
-        return Promise.resolve(exercisesService);
-      if (service === SetsService) return Promise.resolve(setsService);
-      if (service === UsersService) return Promise.resolve(usersService);
-      return Promise.resolve({});
-    });
-    workoutsService.findOne.mockResolvedValue(testWorkout);
+    databaseService.workout.findUnique.mockResolvedValue(testWorkout);
   });
 
   describe('canActivate', () => {
@@ -159,14 +131,16 @@ describe('OwnershipGuard', () => {
       );
     });
 
-    it('should throw ForbiddenException when the requested resource is not found', async () => {
-      workoutsService.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException when the requested resource is not found', async () => {
+      databaseService.workout.findUnique.mockResolvedValue(null);
 
       await expect(guard.canActivate(executionContext)).rejects.toThrow(
-        new ForbiddenException('Resource not found.'),
+        new NotFoundException('Resource not found.'),
       );
 
-      expect(workoutsService.findOne).toHaveBeenCalledWith('resource-1');
+      expect(databaseService.workout.findUnique).toHaveBeenCalledWith({
+        where: { id: 'resource-1' },
+      });
     });
 
     it('should throw ForbiddenException when the user is not found in the request', async () => {
@@ -195,15 +169,15 @@ describe('OwnershipGuard', () => {
     describe('when resource type is WORKOUT', () => {
       beforeEach(() => {
         reflector.get.mockReturnValue(Resource.WORKOUT);
-        moduleRef.resolve.mockResolvedValue(workoutsService);
-        workoutsService.findOne.mockResolvedValue(testWorkout);
+        databaseService.workout.findUnique.mockResolvedValue(testWorkout);
       });
 
-      it('should correctly resolve WorkoutsService and call findOne', async () => {
+      it('should load the workout via DatabaseService and check ability', async () => {
         await guard.canActivate(executionContext);
 
-        expect(moduleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
-        expect(workoutsService.findOne).toHaveBeenCalledWith('resource-1');
+        expect(databaseService.workout.findUnique).toHaveBeenCalledWith({
+          where: { id: 'resource-1' },
+        });
         expect(mockAbility.can).toHaveBeenCalledWith(
           Action.Manage,
           expect.any(WorkoutEntity),
@@ -214,15 +188,15 @@ describe('OwnershipGuard', () => {
     describe('when resource type is EXERCISE', () => {
       beforeEach(() => {
         reflector.get.mockReturnValue(Resource.EXERCISE);
-        moduleRef.resolve.mockResolvedValue(exercisesService);
-        exercisesService.findOne.mockResolvedValue(testExercise);
+        databaseService.exercise.findUnique.mockResolvedValue(testExercise);
       });
 
-      it('should correctly resolve ExercisesService and call findOne', async () => {
+      it('should load the exercise via DatabaseService and check ability', async () => {
         await guard.canActivate(executionContext);
 
-        expect(moduleRef.resolve).toHaveBeenCalledWith(ExercisesService);
-        expect(exercisesService.findOne).toHaveBeenCalledWith('resource-1');
+        expect(databaseService.exercise.findUnique).toHaveBeenCalledWith({
+          where: { id: 'resource-1' },
+        });
         expect(mockAbility.can).toHaveBeenCalledWith(
           Action.Manage,
           expect.any(ExerciseEntity),
@@ -233,15 +207,15 @@ describe('OwnershipGuard', () => {
     describe('when resource type is SET', () => {
       beforeEach(() => {
         reflector.get.mockReturnValue(Resource.SET);
-        moduleRef.resolve.mockResolvedValue(setsService);
-        setsService.findOne.mockResolvedValue(testSet);
+        databaseService.set.findUnique.mockResolvedValue(testSet);
       });
 
-      it('should correctly resolve SetsService and call findOne', async () => {
+      it('should load the set via DatabaseService and check ability', async () => {
         await guard.canActivate(executionContext);
 
-        expect(moduleRef.resolve).toHaveBeenCalledWith(SetsService);
-        expect(setsService.findOne).toHaveBeenCalledWith('resource-1');
+        expect(databaseService.set.findUnique).toHaveBeenCalledWith({
+          where: { id: 'resource-1' },
+        });
         expect(mockAbility.can).toHaveBeenCalledWith(
           Action.Manage,
           expect.any(SetEntity),
@@ -252,64 +226,20 @@ describe('OwnershipGuard', () => {
     describe('when resource type is USER', () => {
       beforeEach(() => {
         reflector.get.mockReturnValue(Resource.USER);
-        moduleRef.resolve.mockResolvedValue(usersService);
-        usersService.findOneById.mockResolvedValue(testUser);
+        databaseService.user.findUnique.mockResolvedValue(testUser);
       });
 
-      it('should correctly resolve UsersService and call findOneById', async () => {
+      it('should load the user via DatabaseService and check ability', async () => {
         await guard.canActivate(executionContext);
 
-        expect(moduleRef.resolve).toHaveBeenCalledWith(UsersService);
-        expect(usersService.findOneById).toHaveBeenCalledWith('resource-1');
+        expect(databaseService.user.findUnique).toHaveBeenCalledWith({
+          where: { id: 'resource-1' },
+        });
         expect(mockAbility.can).toHaveBeenCalledWith(
           Action.Manage,
           expect.any(UserEntity),
         );
       });
-    });
-  });
-
-  describe('getService', () => {
-    it('should return WorkoutsService for WORKOUT resource', async () => {
-      moduleRef.resolve.mockResolvedValue(workoutsService);
-
-      const service = await (guard as any).getService(Resource.WORKOUT);
-
-      expect(service).toBe(workoutsService);
-      expect(moduleRef.resolve).toHaveBeenCalledWith(WorkoutsService);
-    });
-
-    it('should return ExercisesService for EXERCISE resource', async () => {
-      moduleRef.resolve.mockResolvedValue(exercisesService);
-
-      const service = await (guard as any).getService(Resource.EXERCISE);
-
-      expect(service).toBe(exercisesService);
-      expect(moduleRef.resolve).toHaveBeenCalledWith(ExercisesService);
-    });
-
-    it('should return SetsService for SET resource', async () => {
-      moduleRef.resolve.mockResolvedValue(setsService);
-
-      const service = await (guard as any).getService(Resource.SET);
-
-      expect(service).toBe(setsService);
-      expect(moduleRef.resolve).toHaveBeenCalledWith(SetsService);
-    });
-
-    it('should return UsersService for USER resource', async () => {
-      moduleRef.resolve.mockResolvedValue(usersService);
-
-      const service = await (guard as any).getService(Resource.USER);
-
-      expect(service).toBe(usersService);
-      expect(moduleRef.resolve).toHaveBeenCalledWith(UsersService);
-    });
-
-    it('should throw ForbiddenException for invalid resource type', async () => {
-      await expect((guard as any).getService('INVALID')).rejects.toThrow(
-        new ForbiddenException('Invalid resource type.'),
-      );
     });
   });
 
@@ -375,17 +305,21 @@ describe('OwnershipGuard', () => {
     it('should handle missing params.id in request', async () => {
       mockRequest.params = {};
       reflector.get.mockReturnValue(Resource.WORKOUT);
-      workoutsService.findOne.mockResolvedValue(null);
+      databaseService.workout.findUnique.mockResolvedValue(null);
 
       await expect(guard.canActivate(executionContext)).rejects.toThrow(
-        new ForbiddenException('Resource not found.'),
+        new NotFoundException('Resource not found.'),
       );
 
-      expect(workoutsService.findOne).toHaveBeenCalledWith(undefined);
+      expect(databaseService.workout.findUnique).toHaveBeenCalledWith({
+        where: { id: undefined },
+      });
     });
 
-    it('should handle service throwing error', async () => {
-      workoutsService.findOne.mockRejectedValue(new Error('Database error'));
+    it('should handle database error when loading the resource', async () => {
+      databaseService.workout.findUnique.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       await expect(guard.canActivate(executionContext)).rejects.toThrow(
         new Error('Database error'),

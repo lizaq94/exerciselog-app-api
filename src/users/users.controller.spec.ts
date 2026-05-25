@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { DatabaseService } from '../database/database.service';
 import { LoggerService } from '../logger/logger.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersController } from './users.controller';
@@ -61,6 +62,15 @@ describe('UsersController', () => {
       providers: [
         { provide: UsersService, useValue: mockUsersService },
         { provide: LoggerService, useValue: mockLoggerService },
+        {
+          provide: DatabaseService,
+          useValue: {
+            user: { findUnique: jest.fn() },
+            workout: { findUnique: jest.fn() },
+            exercise: { findUnique: jest.fn() },
+            set: { findUnique: jest.fn() },
+          },
+        },
         { provide: CaslAbilityFactory, useValue: mockCaslAbilityFactory },
         { provide: WorkoutsService, useValue: mockWorkoutsService },
       ],

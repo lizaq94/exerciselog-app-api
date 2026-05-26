@@ -117,53 +117,7 @@ export class UsersService {
 
   async addWorkoutBulk(userId: string, dto: CreateWorkoutBulkDto) {
     await this.checkUserExists(userId);
-
-    return this.databaseService.$transaction(async (tx) => {
-      const workout = await tx.workout.create({
-        data: {
-          name: dto.name,
-          notes: dto.notes,
-          duration: dto.duration,
-          date: new Date(),
-          userId: userId,
-        },
-      });
-
-      for (const exerciseDto of dto.exercises) {
-        await tx.exercise.create({
-          data: {
-            name: exerciseDto.name,
-            order: exerciseDto.order,
-            type: exerciseDto.type,
-            notes: exerciseDto.notes,
-            workoutId: workout.id,
-            sets: {
-              create: exerciseDto.sets.map((set) => ({
-                order: set.order,
-                repetitions: set.repetitions,
-                weight: set.weight,
-                durationInSeconds: set.durationInSeconds,
-                restAfterSetInSeconds: set.restAfterSetInSeconds,
-              })),
-            },
-          },
-        });
-      }
-
-      return tx.workout.findUnique({
-        where: { id: workout.id },
-        include: {
-          exercises: {
-            orderBy: { order: 'asc' },
-            include: {
-              sets: {
-                orderBy: { order: 'asc' },
-              },
-            },
-          },
-        },
-      });
-    });
+    return this.workoutService.createBulk(userId, dto);
   }
 
   private async checkUserExists(

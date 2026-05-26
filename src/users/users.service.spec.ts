@@ -29,6 +29,7 @@ describe('UsersService', () => {
   const mockWorkoutsService = {
     findAll: jest.fn(),
     create: jest.fn(),
+    createBulk: jest.fn(),
   };
 
   const mockHashingProvider = {
@@ -752,37 +753,9 @@ describe('UsersService', () => {
       jest.clearAllMocks();
     });
 
-    it('should successfully create workout with exercises and sets', async () => {
+    it('should delegate to workoutService.createBulk after verifying user exists', async () => {
       mockDatabaseService.user.findUnique.mockResolvedValue({ id: mockUserId });
-
-      let exerciseCreateCallCount = 0;
-      let setCreateCallCount = 0;
-
-      const mockTransaction = jest.fn(async (callback) => {
-        const mockTx = {
-          workout: {
-            create: jest.fn().mockResolvedValue(mockCreatedWorkout),
-            findUnique: jest.fn().mockResolvedValue(mockWorkoutWithRelations),
-          },
-          exercise: {
-            create: jest.fn().mockImplementation(() => {
-              exerciseCreateCallCount++;
-              return exerciseCreateCallCount === 1
-                ? mockCreatedExercise1
-                : mockCreatedExercise2;
-            }),
-          },
-          set: {
-            create: jest.fn().mockImplementation(() => {
-              setCreateCallCount++;
-              return { id: `set-${setCreateCallCount}` };
-            }),
-          },
-        };
-        return callback(mockTx);
-      });
-
-      mockDatabaseService.$transaction = mockTransaction;
+      mockWorkoutsService.createBulk.mockResolvedValue(mockWorkoutWithRelations);
 
       const result = await service.addWorkoutBulk(
         mockUserId,
@@ -793,23 +766,16 @@ describe('UsersService', () => {
         where: { id: mockUserId },
         select: { id: true },
       });
-
-      expect(mockTransaction).toHaveBeenCalledTimes(1);
+      expect(mockWorkoutsService.createBulk).toHaveBeenCalledTimes(1);
+      expect(mockWorkoutsService.createBulk).toHaveBeenCalledWith(
+        mockUserId,
+        mockCreateWorkoutBulkDto,
+      );
 
       expect(result).toEqual(mockWorkoutWithRelations);
       expect(result.exercises).toHaveLength(2);
       expect(result.exercises[0].sets).toHaveLength(2);
       expect(result.exercises[1].sets).toHaveLength(1);
-
-      expect(result.exercises[0].name).toBe('Bench Press');
-      expect(result.exercises[0].order).toBe(1);
-      expect(result.exercises[1].name).toBe('Dumbbell Press');
-      expect(result.exercises[1].order).toBe(2);
-
-      expect(result.exercises[0].sets[0].repetitions).toBe(10);
-      expect(result.exercises[0].sets[0].weight).toBe(60);
-      expect(result.exercises[0].sets[1].repetitions).toBe(8);
-      expect(result.exercises[0].sets[1].weight).toBe(70);
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
@@ -823,30 +789,13 @@ describe('UsersService', () => {
         where: { id: mockUserId },
         select: { id: true },
       });
-      expect(mockDatabaseService.$transaction).not.toHaveBeenCalled();
+      expect(mockWorkoutsService.createBulk).not.toHaveBeenCalled();
     });
 
-    it('should rollback transaction on error', async () => {
+    it('should propagate errors from workoutService.createBulk', async () => {
       mockDatabaseService.user.findUnique.mockResolvedValue({ id: mockUserId });
-
       const transactionError = new Error('Failed to create exercise');
-      const mockTransaction = jest.fn(async (callback) => {
-        const mockTx = {
-          workout: {
-            create: jest.fn().mockResolvedValue(mockCreatedWorkout),
-            findUnique: jest.fn(),
-          },
-          exercise: {
-            create: jest.fn().mockRejectedValue(transactionError),
-          },
-          set: {
-            create: jest.fn(),
-          },
-        };
-        return callback(mockTx);
-      });
-
-      mockDatabaseService.$transaction = mockTransaction;
+      mockWorkoutsService.createBulk.mockRejectedValue(transactionError);
 
       await expect(
         service.addWorkoutBulk(mockUserId, mockCreateWorkoutBulkDto),
@@ -856,7 +805,11 @@ describe('UsersService', () => {
         where: { id: mockUserId },
         select: { id: true },
       });
-      expect(mockTransaction).toHaveBeenCalledTimes(1);
+      expect(mockWorkoutsService.createBulk).toHaveBeenCalledTimes(1);
+      expect(mockWorkoutsService.createBulk).toHaveBeenCalledWith(
+        mockUserId,
+        mockCreateWorkoutBulkDto,
+      );
     });
   });
 });

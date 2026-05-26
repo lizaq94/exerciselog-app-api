@@ -21,6 +21,7 @@ describe('WorkoutsService', () => {
       findMany: jest.fn(),
       create: jest.fn(),
     },
+    $transaction: jest.fn(),
   };
 
   const mockExercisesService = {
@@ -393,6 +394,290 @@ describe('WorkoutsService', () => {
       ).rejects.toThrow(databaseError);
 
       expect(mockDatabaseService.workout.create).toHaveBeenCalledTimes(1);
+    });
+  });
+  describe('createBulk', () => {
+    const mockCreateWorkoutBulkDto = {
+      name: 'Push Day - Upper Body',
+      notes: 'Focus on chest and triceps',
+      duration: 60,
+      exercises: [
+        {
+          order: 1,
+          name: 'Bench Press',
+          type: 'main',
+          notes: 'Keep back flat',
+          sets: [
+            {
+              order: 1,
+              repetitions: 10,
+              weight: 60,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+            },
+            {
+              order: 2,
+              repetitions: 8,
+              weight: 70,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+            },
+          ],
+        },
+        {
+          order: 2,
+          name: 'Dumbbell Press',
+          type: 'main',
+          notes: 'Control the movement',
+          sets: [
+            {
+              order: 1,
+              repetitions: 10,
+              weight: 20,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 60,
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockCreatedWorkout = {
+      id: 'workout-123',
+      name: 'Push Day - Upper Body',
+      notes: 'Focus on chest and triceps',
+      duration: 60,
+      date: new Date(),
+      userId: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockCreatedExercise1 = {
+      id: 'exercise-1',
+      name: 'Bench Press',
+      order: 1,
+      type: 'main',
+      notes: 'Keep back flat',
+      workoutId: 'workout-123',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockCreatedExercise2 = {
+      id: 'exercise-2',
+      name: 'Dumbbell Press',
+      order: 2,
+      type: 'main',
+      notes: 'Control the movement',
+      workoutId: 'workout-123',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockWorkoutWithRelations = {
+      ...mockCreatedWorkout,
+      exercises: [
+        {
+          ...mockCreatedExercise1,
+          sets: [
+            {
+              id: 'set-1',
+              order: 1,
+              repetitions: 10,
+              weight: 60,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+              exerciseId: 'exercise-1',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: 'set-2',
+              order: 2,
+              repetitions: 8,
+              weight: 70,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 90,
+              exerciseId: 'exercise-1',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+        {
+          ...mockCreatedExercise2,
+          sets: [
+            {
+              id: 'set-3',
+              order: 1,
+              repetitions: 10,
+              weight: 20,
+              durationInSeconds: 0,
+              restAfterSetInSeconds: 60,
+              exerciseId: 'exercise-2',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
+    };
+
+    it('should successfully create workout with exercises and sets inside a transaction', async () => {
+      let exerciseCreateCallCount = 0;
+      const txWorkoutCreate = jest.fn().mockResolvedValue(mockCreatedWorkout);
+      const txWorkoutFindUnique = jest
+        .fn()
+        .mockResolvedValue(mockWorkoutWithRelations);
+      const txExerciseCreate = jest.fn().mockImplementation(() => {
+        exerciseCreateCallCount++;
+        return exerciseCreateCallCount === 1
+          ? mockCreatedExercise1
+          : mockCreatedExercise2;
+      });
+
+      const mockTransaction = jest.fn(async (callback) => {
+        const mockTx = {
+          workout: {
+            create: txWorkoutCreate,
+            findUnique: txWorkoutFindUnique,
+          },
+          exercise: {
+            create: txExerciseCreate,
+          },
+        };
+        return callback(mockTx);
+      });
+
+      mockDatabaseService.$transaction = mockTransaction;
+
+      const result = await service.createBulk(
+        userId,
+        mockCreateWorkoutBulkDto,
+      );
+
+      expect(mockTransaction).toHaveBeenCalledTimes(1);
+
+      expect(txWorkoutCreate).toHaveBeenCalledTimes(1);
+      expect(txWorkoutCreate).toHaveBeenCalledWith({
+        data: {
+          name: mockCreateWorkoutBulkDto.name,
+          notes: mockCreateWorkoutBulkDto.notes,
+          duration: mockCreateWorkoutBulkDto.duration,
+          date: expect.any(Date),
+          userId: userId,
+        },
+      });
+
+      expect(txExerciseCreate).toHaveBeenCalledTimes(2);
+      expect(txExerciseCreate).toHaveBeenNthCalledWith(1, {
+        data: {
+          name: 'Bench Press',
+          order: 1,
+          type: 'main',
+          notes: 'Keep back flat',
+          workoutId: mockCreatedWorkout.id,
+          sets: {
+            create: [
+              {
+                order: 1,
+                repetitions: 10,
+                weight: 60,
+                durationInSeconds: 0,
+                restAfterSetInSeconds: 90,
+              },
+              {
+                order: 2,
+                repetitions: 8,
+                weight: 70,
+                durationInSeconds: 0,
+                restAfterSetInSeconds: 90,
+              },
+            ],
+          },
+        },
+      });
+      expect(txExerciseCreate).toHaveBeenNthCalledWith(2, {
+        data: {
+          name: 'Dumbbell Press',
+          order: 2,
+          type: 'main',
+          notes: 'Control the movement',
+          workoutId: mockCreatedWorkout.id,
+          sets: {
+            create: [
+              {
+                order: 1,
+                repetitions: 10,
+                weight: 20,
+                durationInSeconds: 0,
+                restAfterSetInSeconds: 60,
+              },
+            ],
+          },
+        },
+      });
+
+      expect(txWorkoutFindUnique).toHaveBeenCalledWith({
+        where: { id: mockCreatedWorkout.id },
+        include: {
+          exercises: {
+            orderBy: { order: 'asc' },
+            include: {
+              sets: {
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+        },
+      });
+
+      expect(result).toEqual(mockWorkoutWithRelations);
+      expect(result.exercises).toHaveLength(2);
+      expect(result.exercises[0].sets).toHaveLength(2);
+      expect(result.exercises[1].sets).toHaveLength(1);
+    });
+
+    it('should rollback transaction when exercise creation fails', async () => {
+      const transactionError = new Error('Failed to create exercise');
+      const txWorkoutFindUnique = jest.fn();
+      const txExerciseCreate = jest.fn().mockRejectedValue(transactionError);
+
+      const mockTransaction = jest.fn(async (callback) => {
+        const mockTx = {
+          workout: {
+            create: jest.fn().mockResolvedValue(mockCreatedWorkout),
+            findUnique: txWorkoutFindUnique,
+          },
+          exercise: {
+            create: txExerciseCreate,
+          },
+        };
+        return callback(mockTx);
+      });
+
+      mockDatabaseService.$transaction = mockTransaction;
+
+      await expect(
+        service.createBulk(userId, mockCreateWorkoutBulkDto),
+      ).rejects.toThrow(transactionError);
+
+      expect(mockTransaction).toHaveBeenCalledTimes(1);
+      expect(txExerciseCreate).toHaveBeenCalledTimes(1);
+      expect(txWorkoutFindUnique).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors thrown by $transaction itself', async () => {
+      mockDatabaseService.$transaction = jest
+        .fn()
+        .mockRejectedValue(databaseError);
+
+      await expect(
+        service.createBulk(userId, mockCreateWorkoutBulkDto),
+      ).rejects.toThrow(databaseError);
+
+      expect(mockDatabaseService.$transaction).toHaveBeenCalledTimes(1);
     });
   });
   describe('update', () => {

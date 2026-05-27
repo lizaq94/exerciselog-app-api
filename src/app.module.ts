@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
@@ -14,6 +14,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from './logger/logger.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AiModule } from './ai/ai.module';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 @Module({
   imports: [
@@ -39,4 +40,8 @@ import { AiModule } from './ai/ai.module';
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void | Promise<void> | any {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

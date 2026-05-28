@@ -91,10 +91,9 @@ describe('Uploads (e2e)', () => {
         .attach('image', testTextFilePath)
         .expect(400);
 
-      expect(response.body.response).toHaveProperty('message');
-      expect(response.body.response.message).toContain(
-        'Mime type not supported',
-      );
+      expect(response.body.error).toBeDefined();
+      expect(response.body.error.statusCode).toBe(400);
+      expect(response.body.error.message).toContain('Mime type not supported');
     });
 
     it('should throw UnauthorizedException when uploading file without authentication', async () => {

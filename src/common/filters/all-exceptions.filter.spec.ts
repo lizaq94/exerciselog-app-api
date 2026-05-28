@@ -15,8 +15,11 @@ describe('AllExceptionsFilter', () => {
   let mockArgumentsHost: jest.Mocked<ArgumentsHost>;
   let mockRequest: jest.Mocked<Request>;
   let mockResponse: jest.Mocked<Response>;
+  const originalApiVersion = process.env.APP_VERSION;
 
   beforeEach(async () => {
+    process.env.APP_VERSION = '1.0.0';
+
     mockRequest = {
       url: '/test-path',
     } as any;
@@ -48,14 +51,11 @@ describe('AllExceptionsFilter', () => {
 
     filter = module.get<AllExceptionsFilter>(AllExceptionsFilter);
     logger = module.get<LoggerService>(LoggerService);
-
-    jest
-      .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(filter)), 'catch')
-      .mockImplementation();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    process.env.APP_VERSION = originalApiVersion;
   });
 
   describe('catch', () => {
@@ -65,10 +65,13 @@ describe('AllExceptionsFilter', () => {
         HttpStatus.BAD_REQUEST,
       );
       const expectedResponse = {
-        statusCode: HttpStatus.BAD_REQUEST,
-        timestamp: expect.any(String),
-        path: '/test-path',
-        response: 'Test error message',
+        apiVersion: '1.0.0',
+        error: {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Test error message',
+          timestamp: expect.any(String),
+          path: '/test-path',
+        },
       };
 
       await filter.catch(httpException, mockArgumentsHost);
@@ -77,23 +80,25 @@ describe('AllExceptionsFilter', () => {
       expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse);
 
       expect(logger.warn).toHaveBeenCalledWith(
-        'Expected test error: "Test error message"',
+        'Expected test error: Test error message',
         AllExceptionsFilter.name,
       );
       expect(logger.error).not.toHaveBeenCalled();
     });
 
-    it('should handle PrismaClientValidationError with status 422, set response, and log the error', async () => {
+    it('should mask PrismaClientValidationError details and return generic message', async () => {
       const prismaError = new PrismaClientValidationError(
-        'Validation\nerror\nmessage',
+        'Invalid `prisma.user.create()` invocation:\ncolumn "email" required',
         { clientVersion: '5.0.0' },
       );
-      const expectedMessage = 'Validationerrormessage';
       const expectedResponse = {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-        timestamp: expect.any(String),
-        path: '/test-path',
-        response: expectedMessage,
+        apiVersion: '1.0.0',
+        error: {
+          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          message: 'Validation error',
+          timestamp: expect.any(String),
+          path: '/test-path',
+        },
       };
 
       await filter.catch(prismaError, mockArgumentsHost);
@@ -102,31 +107,47 @@ describe('AllExceptionsFilter', () => {
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
       expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse);
+
+      const responseBody = mockResponse.json.mock.calls[0][0] as {
+        error: { message: string };
+      };
+      expect(responseBody.error.message.toLowerCase()).not.toContain('prisma');
+      expect(responseBody.error.message.toLowerCase()).not.toContain('email');
+
       expect(logger.error).toHaveBeenCalledWith(
-        expectedMessage,
+        expect.stringContaining('prisma'),
         AllExceptionsFilter.name,
       );
     });
 
-    it('should handle PrismaClientKnownRequestError with status 400, set response, and log the error', async () => {
+    it('should mask PrismaClientKnownRequestError details and return generic message', async () => {
       const prismaError = new PrismaClientKnownRequestError(
-        'Database constraint violation',
+        'Unique constraint failed on the fields: (`email`)',
         { code: 'P2002', clientVersion: '5.0.0' },
       );
-      const expectedMessage = 'Database error: Database constraint violation';
       const expectedResponse = {
-        statusCode: HttpStatus.BAD_REQUEST,
-        timestamp: expect.any(String),
-        path: '/test-path',
-        response: expectedMessage,
+        apiVersion: '1.0.0',
+        error: {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Database request error',
+          timestamp: expect.any(String),
+          path: '/test-path',
+        },
       };
 
       await filter.catch(prismaError, mockArgumentsHost);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse);
+
+      const responseBody = mockResponse.json.mock.calls[0][0] as {
+        error: { message: string };
+      };
+      expect(responseBody.error.message).not.toContain('email');
+      expect(responseBody.error.message).not.toContain('P2002');
+
       expect(logger.error).toHaveBeenCalledWith(
-        expectedMessage,
+        expect.stringContaining('P2002'),
         AllExceptionsFilter.name,
       );
     });
@@ -136,12 +157,14 @@ describe('AllExceptionsFilter', () => {
         'Unknown database issue',
         { clientVersion: '5.0.0' },
       );
-      const expectedMessage = 'Unknown database error';
       const expectedResponse = {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        timestamp: expect.any(String),
-        path: '/test-path',
-        response: expectedMessage,
+        apiVersion: '1.0.0',
+        error: {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Unknown database error',
+          timestamp: expect.any(String),
+          path: '/test-path',
+        },
       };
 
       await filter.catch(prismaError, mockArgumentsHost);
@@ -151,19 +174,21 @@ describe('AllExceptionsFilter', () => {
       );
       expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse);
       expect(logger.error).toHaveBeenCalledWith(
-        expectedMessage,
+        'Unknown database issue',
         AllExceptionsFilter.name,
       );
     });
 
     it('should handle a generic Error with a 500 status, set response, and log the error', async () => {
       const genericError = new Error('Something went wrong');
-      const expectedMessage = 'Internal Server Error';
       const expectedResponse = {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        timestamp: expect.any(String),
-        path: '/test-path',
-        response: expectedMessage,
+        apiVersion: '1.0.0',
+        error: {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Internal Server Error',
+          timestamp: expect.any(String),
+          path: '/test-path',
+        },
       };
 
       await filter.catch(genericError, mockArgumentsHost);
@@ -173,9 +198,18 @@ describe('AllExceptionsFilter', () => {
       );
       expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse);
       expect(logger.error).toHaveBeenCalledWith(
-        expectedMessage,
+        expect.stringContaining('Something went wrong'),
         AllExceptionsFilter.name,
       );
+    });
+
+    it('should send the HTTP response exactly once (no double-send via super.catch)', async () => {
+      const httpException = new HttpException('boom', HttpStatus.BAD_REQUEST);
+
+      await filter.catch(httpException, mockArgumentsHost);
+
+      expect(mockResponse.status).toHaveBeenCalledTimes(1);
+      expect(mockResponse.json).toHaveBeenCalledTimes(1);
     });
   });
 });

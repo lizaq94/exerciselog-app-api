@@ -14,11 +14,14 @@ import {
 import { Request, Response } from 'express';
 import { LoggerService } from '../../logger/logger.service';
 
-type ResponseObject = {
-  statusCode: number;
-  timestamp: string;
-  path: string;
-  response: string | object;
+type ErrorResponse = {
+  apiVersion: string;
+  error: {
+    statusCode: number;
+    message: string;
+    timestamp: string;
+    path: string;
+  };
 };
 
 @Catch()
@@ -33,42 +36,63 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const responseObject: ResponseObject = {
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      response: 'Internal Server Error',
+    const errorResponse: ErrorResponse = {
+      apiVersion: process.env.APP_VERSION,
+      error: {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Internal Server Error',
+        timestamp: new Date().toISOString(),
+        path: request.url,
+      },
     };
 
+    let internalMessage: string = errorResponse.error.message;
+
     if (exception instanceof HttpException) {
-      responseObject.statusCode = exception.getStatus();
-      responseObject.response = exception.getResponse();
+      errorResponse.error.statusCode = exception.getStatus();
+      const httpResponse = exception.getResponse();
+      const clientMessage =
+        typeof httpResponse === 'string'
+          ? httpResponse
+          : ((httpResponse as { message?: string | string[] })?.message ??
+            exception.message);
+      errorResponse.error.message = Array.isArray(clientMessage)
+        ? clientMessage.join(', ')
+        : clientMessage;
+      internalMessage =
+        typeof httpResponse === 'string'
+          ? httpResponse
+          : JSON.stringify(httpResponse);
     } else if (exception instanceof PrismaClientValidationError) {
-      responseObject.statusCode = 422;
-      responseObject.response = exception.message.replace(/\n/g, '');
+      errorResponse.error.statusCode = 422;
+      errorResponse.error.message = 'Validation error';
+      internalMessage = exception.message.replace(/\n/g, '');
     } else if (exception instanceof PrismaClientKnownRequestError) {
-      responseObject.statusCode = 400;
-      responseObject.response = `Database error: ${exception.message}`;
+      errorResponse.error.statusCode = 400;
+      errorResponse.error.message = 'Database request error';
+      internalMessage = `Database error [${exception.code}]: ${exception.message}`;
     } else if (exception instanceof PrismaClientUnknownRequestError) {
-      responseObject.statusCode = 500;
-      responseObject.response = 'Unknown database error';
+      errorResponse.error.statusCode = 500;
+      errorResponse.error.message = 'Unknown database error';
+      internalMessage = exception.message;
+    } else if (exception instanceof Error) {
+      internalMessage = exception.stack ?? exception.message;
     }
 
-    response.status(responseObject.statusCode).json(responseObject);
+    response.status(errorResponse.error.statusCode).json(errorResponse);
 
     const isTestEnv = process.env.NODE_ENV === 'test';
     const isExpectedError =
-      exception instanceof HttpException && responseObject.statusCode < 500;
+      exception instanceof HttpException &&
+      errorResponse.error.statusCode < 500;
 
     if (isTestEnv && isExpectedError) {
       this.logger.warn(
-        `Expected test error: ${JSON.stringify(responseObject.response)}`,
+        `Expected test error: ${internalMessage}`,
         AllExceptionsFilter.name,
       );
     } else {
-      this.logger.error(responseObject.response, AllExceptionsFilter.name);
+      this.logger.error(internalMessage, AllExceptionsFilter.name);
     }
-
-    super.catch(exception, host);
   }
 }

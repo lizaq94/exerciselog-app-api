@@ -92,8 +92,10 @@ describe('AuthController (e2e)', () => {
         .send(invalidData)
         .expect(400);
 
-      expect(response.body.response.message).toBeDefined();
-      expect(Array.isArray(response.body.response.message)).toBe(true);
+      expect(response.body.error).toBeDefined();
+      expect(response.body.error.statusCode).toBe(400);
+      expect(typeof response.body.error.message).toBe('string');
+      expect(response.body.error.message.length).toBeGreaterThan(0);
     });
   });
 

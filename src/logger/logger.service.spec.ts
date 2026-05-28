@@ -1,247 +1,176 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import * as os from 'os';
 import { LoggerService } from './logger.service';
-import * as fs from 'fs';
-import { promises as fsPromises } from 'fs';
-import * as path from 'path';
-
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  promises: {
-    mkdir: jest.fn(),
-    appendFile: jest.fn(),
-  },
-}));
 
 describe('LoggerService', () => {
   let service: LoggerService;
-  let mockExistsSync: jest.MockedFunction<typeof fs.existsSync>;
-  let mockMkdir: jest.MockedFunction<typeof fsPromises.mkdir>;
-  let mockAppendFile: jest.MockedFunction<typeof fsPromises.appendFile>;
-  let consoleSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
+  let stdoutSpy: jest.SpyInstance;
+  let stderrSpy: jest.SpyInstance;
+  let superLogSpy: jest.SpyInstance;
+  let superWarnSpy: jest.SpyInstance;
+  let superErrorSpy: jest.SpyInstance;
+  const originalNodeEnv = process.env.NODE_ENV;
 
-  beforeEach(async () => {
+  const buildService = async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [LoggerService],
     }).compile();
+    return module.get<LoggerService>(LoggerService);
+  };
 
-    service = module.get<LoggerService>(LoggerService);
-
-    mockExistsSync = jest.mocked(fs.existsSync);
-    mockMkdir = jest.mocked(fsPromises.mkdir);
-    mockAppendFile = jest.mocked(fsPromises.appendFile);
-
-    consoleSpy = jest
-      .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(service)), 'log')
-      .mockImplementation();
-    consoleErrorSpy = jest
-      .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(service)), 'error')
-      .mockImplementation();
-
-    jest.clearAllMocks();
+  beforeEach(() => {
+    stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation();
+    stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation();
   });
 
-  describe('log', () => {
-    it('should call logToFile with formatted entry and call super.log', () => {
-      const logToFileSpy = jest
-        .spyOn(service as any, 'logToFile')
-        .mockImplementation();
-      const message = 'Test message';
-      const context = 'TestContext';
-
-      service.log(message, context);
-
-      expect(logToFileSpy).toHaveBeenCalledWith('TestContext\tTest message');
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Test message'),
-        expect.stringContaining('TestContext'),
-      );
-    });
-
-    it('should call logToFile without context when context is not provided', () => {
-      const logToFileSpy = jest
-        .spyOn(service as any, 'logToFile')
-        .mockImplementation();
-      const message = 'Test message';
-
-      service.log(message);
-
-      expect(logToFileSpy).toHaveBeenCalledWith('undefined\tTest message');
-    });
+  afterEach(() => {
+    process.env.NODE_ENV = originalNodeEnv;
+    jest.restoreAllMocks();
   });
 
-  describe('error', () => {
-    it('should call logToFile with ERROR level and call super.error when message is string', () => {
-      const logToFileSpy = jest
-        .spyOn(service as any, 'logToFile')
-        .mockImplementation();
-      const message = 'Error message';
-      const context = 'ErrorContext';
+  describe('in production (NODE_ENV=production)', () => {
+    beforeEach(async () => {
+      process.env.NODE_ENV = 'production';
+      service = await buildService();
+    });
 
-      service.error(message, context);
+    it('emits valid JSONL on stdout for log()', () => {
+      service.log('Test message', 'TestContext');
 
-      expect(logToFileSpy).toHaveBeenCalledWith(
-        'ErrorContext\tError message',
-        'ERROR',
-      );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Error message'),
-        expect.stringContaining('ErrorContext'),
+      expect(stdoutSpy).toHaveBeenCalledTimes(1);
+      expect(stderrSpy).not.toHaveBeenCalled();
+
+      const raw = stdoutSpy.mock.calls[0][0] as string;
+      expect(raw.endsWith('\n')).toBe(true);
+      expect(() => JSON.parse(raw)).not.toThrow();
+
+      const parsed = JSON.parse(raw);
+      expect(parsed).toMatchObject({
+        level: 'log',
+        context: 'TestContext',
+        message: 'Test message',
+        service: 'exerciselog-api',
+        pid: process.pid,
+        hostname: os.hostname(),
+      });
+      expect(parsed.timestamp).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
       );
     });
 
-    it('should stringify object message and call logToFile with ERROR level', () => {
-      const logToFileSpy = jest
-        .spyOn(service as any, 'logToFile')
-        .mockImplementation();
-      const message = { error: 'test error', code: 500 };
-      const context = 'ErrorContext';
+    it('emits valid JSONL on stdout for warn()', () => {
+      service.warn('Heads up', 'WarnContext');
 
-      service.error(message, context);
+      expect(stdoutSpy).toHaveBeenCalledTimes(1);
+      expect(stderrSpy).not.toHaveBeenCalled();
 
-      const expectedStringifiedMessage = JSON.stringify(message, null, 2);
-      expect(logToFileSpy).toHaveBeenCalledWith(
-        `ErrorContext\t${expectedStringifiedMessage}`,
-        'ERROR',
-      );
+      const parsed = JSON.parse(stdoutSpy.mock.calls[0][0] as string);
+      expect(parsed.level).toBe('warn');
+      expect(parsed.message).toBe('Heads up');
+      expect(parsed.context).toBe('WarnContext');
     });
 
-    it('should handle undefined message by converting to string', () => {
-      const logToFileSpy = jest
-        .spyOn(service as any, 'logToFile')
-        .mockImplementation();
+    it('emits valid JSONL on stderr for error() with string message', () => {
+      service.error('Boom', 'ErrorContext');
 
+      expect(stderrSpy).toHaveBeenCalledTimes(1);
+      expect(stdoutSpy).not.toHaveBeenCalled();
+
+      const parsed = JSON.parse(stderrSpy.mock.calls[0][0] as string);
+      expect(parsed.level).toBe('error');
+      expect(parsed.message).toBe('Boom');
+      expect(parsed.context).toBe('ErrorContext');
+      expect(parsed.stack).toBeUndefined();
+    });
+
+    it('preserves object messages without double-stringifying', () => {
+      const payload = { error: 'oops', code: 500 };
+
+      service.error(payload, 'ErrorContext');
+
+      const parsed = JSON.parse(stderrSpy.mock.calls[0][0] as string);
+      expect(parsed.message).toEqual(payload);
+    });
+
+    it('extracts message and stack from Error instances', () => {
+      const err = new Error('Database down');
+
+      service.error(err, 'DbContext');
+
+      const parsed = JSON.parse(stderrSpy.mock.calls[0][0] as string);
+      expect(parsed.message).toBe('Database down');
+      expect(typeof parsed.stack).toBe('string');
+      expect(parsed.stack).toContain('Error: Database down');
+    });
+
+    it('serializes undefined message as the string "undefined"', () => {
       service.error(undefined, 'ErrorContext');
 
-      expect(logToFileSpy).toHaveBeenCalledWith(
-        'ErrorContext\tundefined',
-        'ERROR',
-      );
+      const parsed = JSON.parse(stderrSpy.mock.calls[0][0] as string);
+      expect(parsed.message).toBe('undefined');
+    });
+
+    it('omits context field when not provided', () => {
+      service.log('no context');
+
+      const parsed = JSON.parse(stdoutSpy.mock.calls[0][0] as string);
+      expect(parsed.context).toBeUndefined();
+    });
+
+    it('does not delegate to ConsoleLogger super methods', () => {
+      superLogSpy = jest
+        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(service)), 'log')
+        .mockImplementation();
+      superErrorSpy = jest
+        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(service)), 'error')
+        .mockImplementation();
+
+      service.log('msg', 'Ctx');
+      service.error('err', 'Ctx');
+
+      expect(superLogSpy).not.toHaveBeenCalled();
+      expect(superErrorSpy).not.toHaveBeenCalled();
     });
   });
 
-  describe('logToFile', () => {
-    it('should create the logs directory if it does not exist', async () => {
-      mockExistsSync.mockReturnValue(false);
-      mockMkdir.mockResolvedValue(undefined);
-      mockAppendFile.mockResolvedValue(undefined);
+  describe('in development (NODE_ENV !== production)', () => {
+    beforeEach(async () => {
+      process.env.NODE_ENV = 'development';
+      service = await buildService();
 
-      await (service as any).logToFile('Test entry', 'INFO');
-
-      const expectedLogsDir = path.join(__dirname, '..', '..', 'logs');
-      expect(mockExistsSync).toHaveBeenCalledWith(expectedLogsDir);
-      expect(mockMkdir).toHaveBeenCalledWith(expectedLogsDir);
-    });
-
-    it('should not create logs directory if it already exists', async () => {
-      mockExistsSync.mockReturnValue(true);
-      mockAppendFile.mockResolvedValue(undefined);
-
-      await (service as any).logToFile('Test entry', 'INFO');
-
-      expect(mockMkdir).not.toHaveBeenCalled();
-    });
-
-    it('should append a correctly formatted log entry to the correct log file', async () => {
-      mockExistsSync.mockReturnValue(true);
-      mockAppendFile.mockResolvedValue(undefined);
-
-      const mockDate = new Date('2023-12-25T10:30:00.000Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
-
-      await (service as any).logToFile('Test entry', 'INFO');
-
-      const expectedLogsDir = path.join(__dirname, '..', '..', 'logs');
-      const expectedLogFileName = 'log-25-12-2023.log';
-      const expectedLogFilePath = path.join(
-        expectedLogsDir,
-        expectedLogFileName,
-      );
-      const expectedFormattedEntry = '25/12/2023, 11:30\t[INFO]\tTest entry\n';
-
-      expect(mockAppendFile).toHaveBeenCalledWith(
-        expectedLogFilePath,
-        expectedFormattedEntry,
-      );
-
-      (global.Date as any).mockRestore();
-    });
-
-    it('should use ERROR level when specified', async () => {
-      mockExistsSync.mockReturnValue(true);
-      mockAppendFile.mockResolvedValue(undefined);
-
-      const mockDate = new Date('2023-12-25T10:30:00.000Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
-
-      await (service as any).logToFile('Error entry', 'ERROR');
-
-      const expectedFormattedEntry =
-        '25/12/2023, 11:30\t[ERROR]\tError entry\n';
-
-      expect(mockAppendFile).toHaveBeenCalledWith(
-        expect.any(String),
-        expectedFormattedEntry,
-      );
-
-      (global.Date as any).mockRestore();
-    });
-
-    it('should use INFO level as default when level is not specified', async () => {
-      mockExistsSync.mockReturnValue(true);
-      mockAppendFile.mockResolvedValue(undefined);
-
-      const mockDate = new Date('2023-12-25T10:30:00.000Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
-
-      await (service as any).logToFile('Default entry');
-
-      const expectedFormattedEntry =
-        '25/12/2023, 11:30\t[INFO]\tDefault entry\n';
-
-      expect(mockAppendFile).toHaveBeenCalledWith(
-        expect.any(String),
-        expectedFormattedEntry,
-      );
-
-      (global.Date as any).mockRestore();
-    });
-
-    it('should handle file system errors gracefully when mkdir fails', async () => {
-      const directConsoleSpy = jest
-        .spyOn(console, 'error')
+      superLogSpy = jest
+        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(service)), 'log')
         .mockImplementation();
-      mockExistsSync.mockReturnValue(false);
-      const mkdirError = new Error('Permission denied');
-      mockMkdir.mockRejectedValue(mkdirError);
-
-      await (service as any).logToFile('Test entry', 'INFO');
-
-      expect(directConsoleSpy).toHaveBeenCalledWith('Permission denied');
-      directConsoleSpy.mockRestore();
-    });
-
-    it('should handle file system errors gracefully when appendFile fails', async () => {
-      const directConsoleSpy = jest
-        .spyOn(console, 'error')
+      superWarnSpy = jest
+        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(service)), 'warn')
         .mockImplementation();
-      mockExistsSync.mockReturnValue(true);
-      const appendFileError = new Error('Disk full');
-      mockAppendFile.mockRejectedValue(appendFileError);
-
-      await (service as any).logToFile('Test entry', 'INFO');
-
-      expect(directConsoleSpy).toHaveBeenCalledWith('Disk full');
-      directConsoleSpy.mockRestore();
+      superErrorSpy = jest
+        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(service)), 'error')
+        .mockImplementation();
     });
 
-    it('should handle non-Error exceptions gracefully', async () => {
-      mockExistsSync.mockReturnValue(true);
-      mockAppendFile.mockRejectedValue('String error');
+    it('delegates log() to ConsoleLogger and does not emit JSON', () => {
+      service.log('dev message', 'DevContext');
 
-      await (service as any).logToFile('Test entry', 'INFO');
+      expect(superLogSpy).toHaveBeenCalledWith('dev message', 'DevContext');
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(stderrSpy).not.toHaveBeenCalled();
+    });
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    it('delegates warn() to ConsoleLogger and does not emit JSON', () => {
+      service.warn('dev warning', 'DevContext');
+
+      expect(superWarnSpy).toHaveBeenCalledWith('dev warning', 'DevContext');
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(stderrSpy).not.toHaveBeenCalled();
+    });
+
+    it('delegates error() to ConsoleLogger and does not emit JSON', () => {
+      service.error('dev error', 'DevContext');
+
+      expect(superErrorSpy).toHaveBeenCalledWith('dev error', 'DevContext');
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(stderrSpy).not.toHaveBeenCalled();
     });
   });
 });

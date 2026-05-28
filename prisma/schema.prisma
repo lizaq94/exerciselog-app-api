@@ -35,6 +35,8 @@ model Workout {
   userId    String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@index([userId])
 }
 
 model Exercise {
@@ -49,6 +51,8 @@ model Exercise {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   image     Upload?
+
+  @@index([workoutId])
 }
 
 model Set {
@@ -62,6 +66,8 @@ model Set {
   restAfterSetInSeconds Int?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+
+  @@index([exerciseId])
 }
 
 model Upload {

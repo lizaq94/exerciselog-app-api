@@ -4,6 +4,7 @@ import * as cookieParser from 'cookie-parser';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { DataResponseInterceptor } from './common/interceptors/data-response/data-response.interceptor';
 import { LoggerService } from './logger/logger.service';
+import ConfigService from './config/config.service';
 
 export function createApp(app: INestApplication): void {
   const swaggerConfig = new DocumentBuilder()
@@ -16,6 +17,9 @@ export function createApp(app: INestApplication): void {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
+  const configService = app.get(ConfigService);
+  const { nodeEnv, corsOrigin } = configService.getAppConfig();
+
   app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
@@ -31,4 +35,8 @@ export function createApp(app: INestApplication): void {
   app.useGlobalFilters(new AllExceptionsFilter(logger));
 
   app.useGlobalInterceptors(new DataResponseInterceptor());
+  app.enableCors({
+    origin: nodeEnv === 'production' ? corsOrigin : true,
+    credentials: true,
+  });
 }

@@ -44,6 +44,7 @@ describe('AuthService', () => {
     port: 3000,
     databaseUrl: 'postgres://test',
     version: '1.0.0',
+    corsOrigin: 'http://localhost:3000',
   };
 
   const mockLoggerServiceFactory = () => ({

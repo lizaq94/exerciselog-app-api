@@ -7,6 +7,7 @@ interface AppConfig {
   port: number;
   databaseUrl: string;
   version: string;
+  corsOrigin: string;
 }
 
 interface AuthConfig {
@@ -58,6 +59,7 @@ export class ConfigService {
       port: this.get<number>('PORT', 3000),
       databaseUrl: this.get<string>('DATABASE_URL'),
       version: this.get<string>('APP_VERSION', '1.0.0'),
+      corsOrigin: this.get<string>('CORS_ORIGIN'),
     };
   }
 

@@ -15,6 +15,7 @@ import { LoggerModule } from './logger/logger.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AiModule } from './ai/ai.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     PaginationModule,
     UploadsModule,
     AiModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

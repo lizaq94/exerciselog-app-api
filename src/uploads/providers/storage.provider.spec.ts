@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RequestTimeoutException } from '@nestjs/common';
-import { UploadToAwsProvider } from './upload-to-aws.provider';
+import { StorageProvider } from './storage.provider';
+import { ConfigService } from '../../config/config.service';
 import { S3Client } from '@aws-sdk/client-s3';
 import { v4 as uuid4 } from 'uuid';
 
@@ -10,11 +11,20 @@ jest.mock('@aws-sdk/client-s3', () => ({
 }));
 jest.mock('uuid');
 
-describe('UploadToAwsProvider', () => {
-  let provider: UploadToAwsProvider;
+describe('StorageProvider', () => {
+  let provider: StorageProvider;
   let mockS3Send: jest.Mock;
 
   let mockFile: Express.Multer.File;
+
+  const storageConfig = {
+    endpoint: 'https://test-account.r2.cloudflarestorage.com',
+    region: 'auto',
+    accessKeyId: 'test-access-key',
+    secretAccessKey: 'test-secret-key',
+    bucketName: 'test-bucket',
+    publicUrl: 'https://test-cdn.example.com',
+  };
 
   beforeEach(async () => {
     mockS3Send = jest.fn();
@@ -26,11 +36,21 @@ describe('UploadToAwsProvider', () => {
         }) as any,
     );
 
+    const mockConfigService = {
+      getStorageConfig: jest.fn().mockReturnValue(storageConfig),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UploadToAwsProvider],
+      providers: [
+        StorageProvider,
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
+      ],
     }).compile();
 
-    provider = module.get<UploadToAwsProvider>(UploadToAwsProvider);
+    provider = module.get<StorageProvider>(StorageProvider);
 
     mockFile = {
       originalname: 'test file.jpg',
@@ -45,11 +65,6 @@ describe('UploadToAwsProvider', () => {
       stream: null as any,
     };
 
-    process.env.AWS_PUBLIC_BUCKET_NAME = 'test-bucket';
-    process.env.AWS_REGION = 'us-east-1';
-    process.env.AWS_ACCESS_KEY_ID = 'test-access-key';
-    process.env.AWS_SECRET_ACCESS_KEY = 'test-secret-key';
-
     (uuid4 as jest.Mock).mockReturnValue('mocked-uuid-1234');
     jest.spyOn(Date, 'now').mockReturnValue(1640995200000);
   });
@@ -57,6 +72,20 @@ describe('UploadToAwsProvider', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
+  });
+
+  it('should configure the S3 client with the storage endpoint and region', () => {
+    expect(S3Client).toHaveBeenCalledWith(
+      expect.objectContaining({
+        endpoint: storageConfig.endpoint,
+        region: storageConfig.region,
+        credentials: {
+          accessKeyId: storageConfig.accessKeyId,
+          secretAccessKey: storageConfig.secretAccessKey,
+        },
+        forcePathStyle: true,
+      }),
+    );
   });
 
   describe('fileUpload', () => {
@@ -85,7 +114,7 @@ describe('UploadToAwsProvider', () => {
       expect(result).toBe('testfile-1640995200000-mocked-uuid-1234.jpg');
     });
 
-    it('should throw RequestTimeoutException if the S3 upload fails', async () => {
+    it('should throw RequestTimeoutException if the upload fails', async () => {
       const s3Error = new Error('S3 connection failed');
       mockS3Send.mockRejectedValue(s3Error);
 

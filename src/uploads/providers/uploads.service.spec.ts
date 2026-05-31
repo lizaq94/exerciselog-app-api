@@ -1,16 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UploadsService } from './uploads.service';
-import { UploadToAwsProvider } from './upload-to-aws.provider';
+import { StorageProvider } from './storage.provider';
 import { DatabaseService } from '../../database/database.service';
+import { ConfigService } from '../../config/config.service';
 import { BadRequestException, ConflictException } from '@nestjs/common';
+
+const PUBLIC_URL = 'https://test-cdn.example.com';
 
 describe('UploadsService', () => {
   let service: UploadsService;
-  let uploadToAwsProvider: any;
+  let storageProvider: any;
   let databaseService: any;
 
   beforeEach(async () => {
-    const mockUploadToAwsProvider = {
+    const mockStorageProvider = {
       fileUpload: jest.fn(),
     };
 
@@ -20,22 +23,30 @@ describe('UploadsService', () => {
       },
     };
 
+    const mockConfigService = {
+      getStorageConfig: jest.fn().mockReturnValue({ publicUrl: PUBLIC_URL }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UploadsService,
         {
-          provide: UploadToAwsProvider,
-          useValue: mockUploadToAwsProvider,
+          provide: StorageProvider,
+          useValue: mockStorageProvider,
         },
         {
           provide: DatabaseService,
           useValue: mockDatabaseService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
     service = module.get<UploadsService>(UploadsService);
-    uploadToAwsProvider = module.get(UploadToAwsProvider);
+    storageProvider = module.get(StorageProvider);
     databaseService = module.get(DatabaseService);
   });
 
@@ -62,7 +73,7 @@ describe('UploadsService', () => {
       const generatedFileName = 'test-image-1234567890-uuid.jpg';
       const expectedUploadData = {
         name: generatedFileName,
-        path: `https://${process.env.AWS_CLOUDFRONT_URL}/${generatedFileName}`,
+        path: `${PUBLIC_URL}/${generatedFileName}`,
         type: 'IMAGE',
         mime: 'image/jpeg',
         size: 1024,
@@ -75,12 +86,12 @@ describe('UploadsService', () => {
         updatedAt: new Date(),
       };
 
-      uploadToAwsProvider.fileUpload.mockResolvedValue(generatedFileName);
+      storageProvider.fileUpload.mockResolvedValue(generatedFileName);
       databaseService.upload.create.mockResolvedValue(expectedResult);
 
       const result = await service.uploadImage(mockFile, exerciseId);
 
-      expect(uploadToAwsProvider.fileUpload).toHaveBeenCalledWith(mockFile);
+      expect(storageProvider.fileUpload).toHaveBeenCalledWith(mockFile);
       expect(databaseService.upload.create).toHaveBeenCalledWith({
         data: expectedUploadData,
       });
@@ -98,7 +109,7 @@ describe('UploadsService', () => {
         'No file provided.',
       );
 
-      expect(uploadToAwsProvider.fileUpload).not.toHaveBeenCalled();
+      expect(storageProvider.fileUpload).not.toHaveBeenCalled();
       expect(databaseService.upload.create).not.toHaveBeenCalled();
     });
 
@@ -136,7 +147,7 @@ describe('UploadsService', () => {
         );
       }
 
-      expect(uploadToAwsProvider.fileUpload).not.toHaveBeenCalled();
+      expect(storageProvider.fileUpload).not.toHaveBeenCalled();
       expect(databaseService.upload.create).not.toHaveBeenCalled();
     });
 
@@ -157,13 +168,13 @@ describe('UploadsService', () => {
       const exerciseId = 'test-exercise-id';
       const uploadError = new Error('AWS upload failed');
 
-      uploadToAwsProvider.fileUpload.mockRejectedValue(uploadError);
+      storageProvider.fileUpload.mockRejectedValue(uploadError);
 
       await expect(service.uploadImage(mockFile, exerciseId)).rejects.toThrow(
         ConflictException,
       );
 
-      expect(uploadToAwsProvider.fileUpload).toHaveBeenCalledWith(mockFile);
+      expect(storageProvider.fileUpload).toHaveBeenCalledWith(mockFile);
       expect(databaseService.upload.create).not.toHaveBeenCalled();
     });
   });

@@ -2,34 +2,42 @@ import { Injectable, RequestTimeoutException } from '@nestjs/common';
 import * as path from 'node:path';
 import { v4 as uuid4 } from 'uuid';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { ConfigService } from '../../config/config.service';
 
 @Injectable()
-export class UploadToAwsProvider {
+export class StorageProvider {
   private s3: S3Client;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
+    const { endpoint, region, accessKeyId, secretAccessKey } =
+      this.configService.getStorageConfig();
+
     this.s3 = new S3Client({
+      endpoint,
+      region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId,
+        secretAccessKey,
       },
-      region: process.env.AWS_REGION,
+      forcePathStyle: true,
     });
   }
   public async fileUpload(file: Express.Multer.File) {
     try {
+      const { bucketName } = this.configService.getStorageConfig();
       const key = this.generateFileName(file);
 
       await this.s3.send(
         new PutObjectCommand({
-          Bucket: process.env.AWS_PUBLIC_BUCKET_NAME,
+          Bucket: bucketName,
           Body: file.buffer,
           Key: key,
           ContentType: file.mimetype,
+          CacheControl: 'public, max-age=31536000, immutable',
         }),
       );
 
-      return this.generateFileName(file);
+      return key;
     } catch (error) {
       throw new RequestTimeoutException(error);
     }

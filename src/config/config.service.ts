@@ -24,12 +24,13 @@ interface MailConfig {
   from: string;
 }
 
-interface AwsConfig {
+interface StorageConfig {
+  endpoint: string;
   region: string;
   accessKeyId: string;
   secretAccessKey: string;
-  publicBucketName: string;
-  cloudFrontUrl: string;
+  bucketName: string;
+  publicUrl: string;
 }
 
 interface AiConfig {
@@ -94,15 +95,16 @@ export class ConfigService {
   }
 
   /**
-   * Gets AWS configuration
+   * Gets object storage configuration (S3-compatible: Cloudflare R2, MinIO, AWS S3, ...)
    */
-  getAwsConfig(): AwsConfig {
+  getStorageConfig(): StorageConfig {
     return {
-      region: this.get<string>('AWS_REGION', 'eu-central-1'),
-      accessKeyId: this.get<string>('AWS_ACCESS_KEY_ID', ''),
-      secretAccessKey: this.get<string>('AWS_SECRET_ACCESS_KEY', ''),
-      publicBucketName: this.get<string>('AWS_PUBLIC_BUCKET_NAME', ''),
-      cloudFrontUrl: this.get<string>('AWS_CLOUDFRONT_URL', ''),
+      endpoint: this.get<string>('S3_ENDPOINT', ''),
+      region: this.get<string>('S3_REGION', 'auto'),
+      accessKeyId: this.get<string>('S3_ACCESS_KEY_ID', ''),
+      secretAccessKey: this.get<string>('S3_SECRET_ACCESS_KEY', ''),
+      bucketName: this.get<string>('S3_BUCKET_NAME', ''),
+      publicUrl: this.get<string>('S3_PUBLIC_URL', ''),
     };
   }
 

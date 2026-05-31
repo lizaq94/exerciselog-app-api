@@ -29,12 +29,13 @@ import * as Joi from 'joi';
         SMTP_USERNAME: Joi.string().required(),
         SMTP_PASSWORD: Joi.string().required(),
 
-        // AWS variables
-        AWS_REGION: Joi.string().required(),
-        AWS_ACCESS_KEY_ID: Joi.string().required(),
-        AWS_SECRET_ACCESS_KEY: Joi.string().required(),
-        AWS_PUBLIC_BUCKET_NAME: Joi.string().required(),
-        AWS_CLOUDFRONT_URL: Joi.string().required(),
+        // Object storage variables (S3-compatible: Cloudflare R2, MinIO, AWS S3, ...)
+        S3_ENDPOINT: Joi.string().uri().required(),
+        S3_REGION: Joi.string().default('auto'),
+        S3_ACCESS_KEY_ID: Joi.string().required(),
+        S3_SECRET_ACCESS_KEY: Joi.string().required(),
+        S3_BUCKET_NAME: Joi.string().required(),
+        S3_PUBLIC_URL: Joi.string().uri().required(),
 
         // OpenRouter variables
         OPEN_ROUTER_API_KEY: Joi.string().required(),

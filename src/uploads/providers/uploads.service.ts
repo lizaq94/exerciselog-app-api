@@ -3,16 +3,18 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { UploadToAwsProvider } from './upload-to-aws.provider';
+import { StorageProvider } from './storage.provider';
 import { DatabaseService } from '../../database/database.service';
 import { UploadFile } from '../interfaces/upload-file.interfece';
 import { FileType } from '../enums/file-type.enum';
+import { ConfigService } from '../../config/config.service';
 
 @Injectable()
 export class UploadsService {
   constructor(
-    private readonly uploadToAwsProvider: UploadToAwsProvider,
+    private readonly storageProvider: StorageProvider,
     private readonly databaseService: DatabaseService,
+    private readonly configService: ConfigService,
   ) {}
   public async uploadImage(file: Express.Multer.File, exerciseId: string) {
     if (!file) {
@@ -28,11 +30,12 @@ export class UploadsService {
     }
 
     try {
-      const name = await this.uploadToAwsProvider.fileUpload(file);
+      const name = await this.storageProvider.fileUpload(file);
+      const { publicUrl } = this.configService.getStorageConfig();
 
       const uploadFile: UploadFile = {
         name,
-        path: `https://${process.env.AWS_CLOUDFRONT_URL}/${name}`,
+        path: `${publicUrl}/${name}`,
         type: FileType.IMAGE,
         mime: file.mimetype,
         size: file.size,

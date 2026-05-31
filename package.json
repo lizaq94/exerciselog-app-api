@@ -24,7 +24,6 @@
     "test:debug": "NODE_ENV=test node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e:setup": "NODE_ENV=test dotenv -e .env.test -- npx prisma migrate deploy",
     "test:e2e:reset": "NODE_ENV=test dotenv -e .env.test -- npx prisma migrate reset --force",
-    "test:e2e:seed": "NODE_ENV=test dotenv -e .env.test -- npx prisma db seed",
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json"
   },
   "dependencies": {

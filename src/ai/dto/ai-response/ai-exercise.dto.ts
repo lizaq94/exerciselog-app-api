@@ -1,4 +1,11 @@
-import { IsString, IsInt, Min, IsIn, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  Min,
+  IsIn,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { AiSetDto } from './ai-set.dto';

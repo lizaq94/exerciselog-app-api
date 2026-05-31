@@ -552,10 +552,7 @@ describe('WorkoutsService', () => {
 
       mockDatabaseService.$transaction = mockTransaction;
 
-      const result = await service.createBulk(
-        userId,
-        mockCreateWorkoutBulkDto,
-      );
+      const result = await service.createBulk(userId, mockCreateWorkoutBulkDto);
 
       expect(mockTransaction).toHaveBeenCalledTimes(1);
 

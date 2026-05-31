@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-namespace -- PaginatorTypes deliberately groups the pagination types that are referenced as `PaginatorTypes.X` across the codebase. */
 export namespace PaginatorTypes {
   export interface PaginatedResult<T> {
     data: T[];

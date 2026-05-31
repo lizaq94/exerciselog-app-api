@@ -27,8 +27,6 @@ const mockLoggerService = {
 
 describe('SetsController', () => {
   let controller: SetsController;
-  let setsService: SetsService;
-  let loggerService: LoggerService;
   const mockSetId = '123';
   const mockSet = { id: mockSetId, reps: 10, weight: 100 };
   const mockUpdateDto = { reps: 12, weight: 110 };
@@ -61,8 +59,6 @@ describe('SetsController', () => {
     }).compile();
 
     controller = module.get<SetsController>(SetsController);
-    setsService = module.get<SetsService>(SetsService);
-    loggerService = module.get<LoggerService>(LoggerService);
 
     jest.clearAllMocks();
   });

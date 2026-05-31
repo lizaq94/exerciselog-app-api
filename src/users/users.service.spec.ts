@@ -755,7 +755,9 @@ describe('UsersService', () => {
 
     it('should delegate to workoutService.createBulk after verifying user exists', async () => {
       mockDatabaseService.user.findUnique.mockResolvedValue({ id: mockUserId });
-      mockWorkoutsService.createBulk.mockResolvedValue(mockWorkoutWithRelations);
+      mockWorkoutsService.createBulk.mockResolvedValue(
+        mockWorkoutWithRelations,
+      );
 
       const result = await service.addWorkoutBulk(
         mockUserId,

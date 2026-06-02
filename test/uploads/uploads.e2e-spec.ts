@@ -17,6 +17,7 @@ describe('Uploads (e2e)', () => {
   let app: INestApplication;
   let server: any;
   let databaseService: any;
+  let mocks: any;
 
   const testImagePath = join(__dirname, '../fixtures/test-image.jpg');
 
@@ -25,6 +26,7 @@ describe('Uploads (e2e)', () => {
     app = context.app;
     server = context.server;
     databaseService = context.databaseService;
+    mocks = context.mocks;
   });
 
   beforeEach(async () => {
@@ -37,8 +39,9 @@ describe('Uploads (e2e)', () => {
   });
 
   describe('/exercises/:id/image (POST)', () => {
-    //TODO: Will be fixed when we change AWS provider.
-    it.skip('should upload image to own exercise when authenticated user provides valid image file', async () => {
+    it('should upload image to own exercise when authenticated user provides valid image file', async () => {
+      mocks.storageProvider.fileUpload.mockClear();
+
       const { agent, user } = await setupSingleUser(server);
       const workoutData = createTestWorkoutData();
       const workout = await createWorkout(agent, user.id, workoutData);
@@ -58,8 +61,9 @@ describe('Uploads (e2e)', () => {
       expect(response.body.data).toHaveProperty('name');
       expect(response.body.data).toHaveProperty('mime');
       expect(response.body.data).toHaveProperty('type');
-      expect(response.body.data.path).toContain('cloudfront.net');
+      expect(response.body.data.path).toContain(response.body.data.name);
       expect(response.body.data).toHaveProperty('exerciseId', exercise.id);
+      expect(mocks.storageProvider.fileUpload).toHaveBeenCalledTimes(1);
     });
 
     it('should throw ForbiddenException when authenticated user tries to upload image to another users exercise', async () => {

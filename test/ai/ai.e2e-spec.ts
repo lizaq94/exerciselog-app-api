@@ -19,12 +19,14 @@ describe('AiController (e2e)', () => {
   let app: INestApplication;
   let server: any;
   let databaseService: any;
+  let mocks: any;
 
   beforeAll(async () => {
     const context = await setupE2ETest();
     app = context.app;
     server = context.server;
     databaseService = context.databaseService;
+    mocks = context.mocks;
   });
 
   beforeEach(async () => {
@@ -37,8 +39,9 @@ describe('AiController (e2e)', () => {
   });
 
   describe('/ai/generate-workout (POST)', () => {
-    // Note: This test is skipped because it can take 60-100+ seconds due to AI API response time.
-    it.skip('should generate workout plan when provided with valid input data', async () => {
+    it('should generate workout plan when provided with valid input data', async () => {
+      mocks.openRouterProvider.generateWorkout.mockClear();
+
       const { agent } = await setupSingleUser(server);
       const generateWorkoutData = createTestGenerateWorkoutData();
 
@@ -47,6 +50,7 @@ describe('AiController (e2e)', () => {
         .send(generateWorkoutData)
         .expect(200);
 
+      expect(mocks.openRouterProvider.generateWorkout).toHaveBeenCalledTimes(1);
       expectArrayResponse(response);
       expect(response.body.data.length).toBeGreaterThan(0);
 
@@ -66,7 +70,7 @@ describe('AiController (e2e)', () => {
 
       const set = exercise.sets[0];
       expect(set).toHaveProperty('order');
-    }, 90000);
+    });
 
     it('should throw validation error when provided with invalid data', async () => {
       const { agent } = await setupSingleUser(server);
@@ -150,12 +154,11 @@ describe('AiController (e2e)', () => {
   });
 
   describe('Complete AI Workout Flow', () => {
-    // Note: This test is skipped because AI API response time is unpredictable (30-100+ seconds).
-    it.skip('should complete full flow: generate workout and bulk save for authenticated user', async () => {
+    it('should complete full flow: generate workout and bulk save for authenticated user', async () => {
       const { agent, user } = await setupSingleUser(server);
       const generateWorkoutData = createTestGenerateWorkoutData();
 
-      const generateResponse = await request(server)
+      const generateResponse = await agent
         .post('/ai/generate-workout')
         .send(generateWorkoutData)
         .expect(200);
@@ -198,6 +201,6 @@ describe('AiController (e2e)', () => {
         name: generatedWorkout.name,
         userId: user.id,
       });
-    }, 60000);
+    });
   });
 });

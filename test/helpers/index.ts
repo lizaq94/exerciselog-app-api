@@ -1,4 +1,5 @@
 export * from './setup-test.helper';
+export * from './external-services.helper';
 export * from './database-cleaner.helper';
 export * from './resource-creators.helper';
 export * from './assertions.helper';

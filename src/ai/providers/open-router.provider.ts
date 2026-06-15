@@ -28,9 +28,8 @@ export class OpenRouterProvider {
   private async loadPromptTemplate() {
     try {
       const templatePath = path.join(
-        process.cwd(),
-        'src',
-        'ai',
+        __dirname,
+        '..',
         'prompts',
         'generate-workout.prompt.hbs',
       );

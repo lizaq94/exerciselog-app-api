@@ -15,6 +15,7 @@ import * as Joi from 'joi';
           .default('development'),
         PORT: Joi.number().default(3000),
         DATABASE_URL: Joi.string().required(),
+        DIRECT_URL: Joi.string().optional(),
         APP_VERSION: Joi.string().default('1.0.0'),
         CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
 

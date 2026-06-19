@@ -5,3 +5,5 @@ dist
 coverage
 logs
 test
+.env.prod
+.env.production

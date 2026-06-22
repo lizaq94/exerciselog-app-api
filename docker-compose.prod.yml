@@ -13,12 +13,12 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     networks: [web]
   migrate:
-    image: ghcr.io/lizaq94/exerciselog-app-api:main-159241a
+    image: ghcr.io/lizaq94/exerciselog-app-api:${IMAGE_TAG}
     command: npx prisma migrate deploy
     env_file: .env.prod
     networks: [web]
   app:
-    image: ghcr.io/lizaq94/exerciselog-app-api:main-159241a
+    image: ghcr.io/lizaq94/exerciselog-app-api:${IMAGE_TAG}
     restart: unless-stopped
     env_file: .env.prod
     networks: [web]

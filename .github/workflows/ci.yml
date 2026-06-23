@@ -84,3 +84,45 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  deploy:
+    needs: [docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+
+    steps:
+      - name: Tag version
+        run: echo "IMAGE_TAG=main-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known hosts
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy to staging
+        run: |
+          ssh -o ConnectTimeout=15 \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "IMAGE_TAG=$IMAGE_TAG bash -s" <<'EOF'
+            set -euo pipefail
+            cd /home/deploy/exerciselog-app-api
+
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+
+            for i in $(seq 1 10); do
+              if curl -fsS https://staging.exerciselog.app/health > /dev/null; then
+                echo "App is live"; exit 0
+              fi
+              echo "Attempt $i failed, waiting..."
+              sleep 5
+            done
+            echo "Deploy failed - /health did not respond"; exit 1
+          EOF

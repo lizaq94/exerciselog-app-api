@@ -10,10 +10,6 @@ export function createApp(app: INestApplication): void {
   const configService = app.get(ConfigService);
   const { nodeEnv, corsOrigin } = configService.getAppConfig();
 
-  // Behind the Caddy reverse proxy the request reaches Nest over plain HTTP.
-  // Trust exactly one proxy hop (Caddy) so `request.protocol` reflects the
-  // original HTTPS scheme and `request.ip` is the real client (used by the
-  // throttler). Do not use `true` here — it would let clients spoof their IP.
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   if (nodeEnv !== 'production') {

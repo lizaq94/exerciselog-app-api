@@ -113,7 +113,9 @@ jobs:
               "IMAGE_TAG=$IMAGE_TAG bash -s" <<'EOF'
             set -euo pipefail
             cd /home/deploy/exerciselog-app-api
-
+            git pull --ff-only
+            cp deploy/staging/docker-compose.yml docker-compose.prod.yml
+          
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
 

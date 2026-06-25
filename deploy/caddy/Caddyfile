@@ -1,0 +1,7 @@
+  staging.exerciselog.app {
+      reverse_proxy app:3000
+  }
+
+  api.exerciselog.app {
+      reverse_proxy app-prod:3000
+  }

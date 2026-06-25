@@ -1,0 +1,19 @@
+name: caddy
+networks:
+  web:
+    external: true
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks: [web]
+volumes:
+  caddy_data:
+  caddy_config:

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { paginator, PaginatorTypes } from '../common/pagination/paginator';
 import { Request } from 'express';
 import { PaginationQueryDto } from '../common/pagination/dtos/pagination-query.dto';
-import { PaginatedResult } from '../common/pagination/interfeces/paginated.intefece';
+import { PaginatedResult } from '../common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from '../common/pagination/pagination.provider';
 import { DatabaseService } from '../database/database.service';
 import { CreateExerciseDto } from '../exercises/dto/create-exercise.dto';

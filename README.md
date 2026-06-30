@@ -15,7 +15,7 @@
 *   **Authentication**: Secure user registration and login using `passport.js`, with JWT access and refresh tokens stored in `httpOnly` cookies.
 *   **Authorization**: A permission system based on the **CASL** library, guaranteeing that users can only manage their own resources (workouts, exercises, sets).
 *   **Data Management (CRUD)**: Full support for operations on `Users`, `Workouts`, `Exercises`, and `Sets` entities.
-*   **File Uploads**: Ability to upload exercise images to **AWS S3**.
+*   **File Uploads**: Ability to upload exercise images to **S3-compatible object storage** (Cloudflare R2).
 *   **Email Notifications**: Automatic sending of a welcome email to newly registered users via `Nodemailer`.
 *   **AI Workout Generation**: Generate personalized workout plans using AI through **OpenRouter API** integration.
 *   **Database**: Integration with PostgreSQL through **Prisma ORM**, including a migration system for managing the database schema.
@@ -35,7 +35,7 @@
 *   **Authentication**: [Passport.js](http://www.passportjs.org/) (JWT & Local strategies)
 *   **Authorization**: [CASL](https://casl.js.org/)
 *   **API Documentation**: [Swagger](https://swagger.io/)
-*   **File Uploads**: [AWS SDK for S3](https://aws.amazon.com/sdk-for-javascript/)
+*   **File Uploads**: [AWS SDK for S3](https://aws.amazon.com/sdk-for-javascript/) (S3-compatible storage — [Cloudflare R2](https://developers.cloudflare.com/r2/))
 *   **Emailing**: [Nodemailer](https://nodemailer.com/)
 *   **AI Integration**: [OpenRouter API](https://openrouter.ai/)
 *   **Validation**: `class-validator`, `class-transformer`
@@ -48,10 +48,10 @@ To run this project locally, follow the steps below.
 
 ### Prerequisites
 
-*   [Node.js](https://nodejs.org/) (version >= 20)
+*   [Node.js](https://nodejs.org/) (version >= 24)
 *   [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
 *   [Docker](https://www.docker.com/) (recommended for running the PostgreSQL database)
-*   An AWS account with S3 permissions (optional, for the file upload feature)
+*   An S3-compatible object storage account, e.g. [Cloudflare R2](https://developers.cloudflare.com/r2/) (optional, for the file upload feature)
 
 ### Installation
 
@@ -129,15 +129,16 @@ You will find detailed information about all available endpoints, required param
 Below is a description of the environment variables from the `.env.example` file:
 
 ```ini
-# Application Basic Configuration
+# Basic application configuration
 NODE_ENV=development # Environment (development, production)
 PORT=3000            # Port the server runs on
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/exerciselog # URL to the PostgreSQL database
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/exerciselog # Pooled connection URL to the PostgreSQL database
+DIRECT_URL=postgresql://postgres:postgres@localhost:5432/exerciselog # Direct connection URL (used by Prisma for migrations)
 APP_VERSION=1.0.0    # API version
 
 # JWT Configuration
 JWT_ACCESS_TOKEN_SECRET=supersecretkey           # Secret for the access token
-JWT_ACCESS_TOKEN_EXPIRATION_MS=86400000          # Access token expiration time (in ms, default: 24h)
+JWT_ACCESS_TOKEN_EXPIRATION_MS=900000            # Access token expiration time (in ms, default: 15 min)
 JWT_REFRESH_TOKEN_SECRET=supersecretrefreshkey   # Secret for the refresh token
 JWT_REFRESH_TOKEN_EXPIRATION_MS=604800000        # Refresh token expiration time (in ms, default: 7 days)
 
@@ -147,12 +148,13 @@ SMTP_USERNAME=user@example.com     # SMTP username
 SMTP_PASSWORD=password             # SMTP password
 MAIL_FROM=no-reply@exerciselog.com # Sender's email address
 
-# AWS Configuration
-AWS_REGION=eu-central-1               # AWS region
-AWS_ACCESS_KEY_ID=your_access_key_id  # AWS access key
-AWS_SECRET_ACCESS_KEY=your_secret_access_key # AWS secret access key
-AWS_PUBLIC_BUCKET_NAME=your_bucket_name # S3 bucket name
-AWS_CLOUDFRONT_URL=https://your-distribution.cloudfront.net # Optional: CloudFront distribution URL
+# Object storage configuration (S3-compatible — Cloudflare R2)
+S3_ENDPOINT=https://your_account_id.r2.cloudflarestorage.com # S3-compatible endpoint (e.g. Cloudflare R2)
+S3_REGION=auto                            # Storage region ("auto" for R2)
+S3_ACCESS_KEY_ID=your_r2_access_key_id    # Access key ID
+S3_SECRET_ACCESS_KEY=your_r2_secret_access_key # Secret access key
+S3_BUCKET_NAME=exerciselog                # Bucket name
+S3_PUBLIC_URL=https://img.your-domain.com # Public URL of the bucket (custom domain)
 
 # OpenRouter Configuration
 OPEN_ROUTER_API_KEY=your_api_key      # OpenRouter API key for AI workout generation

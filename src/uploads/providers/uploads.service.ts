@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { StorageProvider } from './storage.provider';
 import { DatabaseService } from '../../database/database.service';
-import { UploadFile } from '../interfaces/upload-file.interfece';
+import { UploadFile } from '../interfaces/upload-file.interface';
 import { FileType } from '../enums/file-type.enum';
 import { ConfigService } from '../../config/config.service';
 

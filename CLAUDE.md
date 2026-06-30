@@ -75,10 +75,10 @@ List endpoints return `PaginatedResult<T> = {data, meta, links}` (see `WorkoutsS
 `LoggerService` extends Nest's `ConsoleLogger` and **also** appends entries to `logs/log-DD-MM-YYYY.log` (Europe/Warsaw timezone). Controllers/services inject it and pass `ClassName.name` as context. `LOG_LEVEL` env (`error|warn|log|debug|verbose`) controls console output; file output is unconditional.
 
 ### Configuration
-Wrap all env access through the custom `ConfigService` in `src/config/` (not `@nestjs/config` directly). It exposes typed getters: `getAppConfig()`, `getAuthConfig()`, `getMailConfig()`, `getAwsConfig()`. Add new typed groups here rather than reading `process.env` ad hoc.
+Wrap all env access through the custom `ConfigService` in `src/config/` (not `@nestjs/config` directly). It exposes typed getters: `getAppConfig()`, `getAuthConfig()`, `getMailConfig()`, `getStorageConfig()`. Add new typed groups here rather than reading `process.env` ad hoc.
 
 ### Uploads
-`UploadsModule` exports `UploadsService`, which delegates to `UploadToAwsProvider` for S3 puts and persists an `Upload` row linked to the exercise. AWS config (region, keys, bucket, optional CloudFront URL) flows through `ConfigService.getAwsConfig()`.
+`UploadsModule` exports `UploadsService`, which delegates to `StorageProvider` for S3-compatible puts (Cloudflare R2 via the AWS S3 SDK) and persists an `Upload` row linked to the exercise. Storage config (endpoint, region, keys, bucket, public URL) flows through `ConfigService.getStorageConfig()`.
 
 ## Conventions worth preserving
 - **Controllers stay thin**: validate via DTO + `class-validator`, log entry, delegate to service. Mirror the existing Swagger decorators (`@ApiOperation`, `@ApiBody`, `@ApiOkResponse`/`ApiCreatedResponse`/`ApiNoContentResponse`, `@ApiParam`) — Swagger is the published contract.

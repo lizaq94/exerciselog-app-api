@@ -59,10 +59,35 @@ jobs:
               cd /home/deploy/exerciselog-prod
               git pull --ff-only
               cp deploy/prod/docker-compose.yml docker-compose.prod.yml
-            
-              docker compose -f docker-compose.prod.yml pull
-              docker compose -f docker-compose.prod.yml up -d
-            
+          
+              COMPOSE="docker compose -f docker-compose.prod.yml"
+              
+              BLUE=$($COMPOSE ps -q app-prod)
+              echo "Blue: $BLUE"
+          
+              $COMPOSE pull app-prod
+          
+              $COMPOSE run --rm migrate
+          
+              $COMPOSE up -d --no-deps --no-recreate --scale app-prod=2 app-prod
+          
+              GREEN=$($COMPOSE ps -q app-prod | grep -v "$BLUE")
+          
+              for i in $(seq 1 18); do
+                status=$(docker inspect -f '{{.State.Health.Status}}' "$GREEN")
+                echo "Green health: $status (attempt $i/18)"
+                [ "$status" = "healthy" ] && break
+                sleep 5
+              done
+          
+              if [ "$status" != "healthy" ]; then
+                echo "Deploy failed - Green health did not become healthy"
+                docker stop "$GREEN" && docker rm "$GREEN"
+                exit 1
+              fi
+          
+              docker stop "$BLUE" && docker rm "$BLUE"
+              
               for i in $(seq 1 10); do
                 if curl -fsS https://api.exerciselog.app/health > /dev/null; then
                   echo "App is live"; exit 0

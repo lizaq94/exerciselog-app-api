@@ -20,4 +20,9 @@ export class HealthController {
       () => this.primsHealthIndicator.isHealthy('database'),
     ]);
   }
+
+  @Get('live')
+  async live() {
+    return { status: 'ok' };
+  }
 }

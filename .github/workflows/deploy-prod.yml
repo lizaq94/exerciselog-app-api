@@ -67,7 +67,7 @@ jobs:
           
               $COMPOSE pull app-prod
           
-              $COMPOSE run --rm migrate
+              $COMPOSE run --rm migrate < /dev/null
           
               $COMPOSE up -d --no-deps --no-recreate --scale app-prod=2 app-prod
           

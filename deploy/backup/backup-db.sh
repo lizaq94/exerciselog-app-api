@@ -16,4 +16,6 @@ docker run --rm -e DATABASE_URL_DIRECT postgres:17-alpine \
 rclone copy "/tmp/${FILE}" r2-backups:exerciselog-backups/db/
 rm "/tmp/${FILE}"
 
+curl -fsS -m 10 --retry 3 "$HC_PING_URL" > /dev/null
+
 echo "Backup OK: ${FILE}" 

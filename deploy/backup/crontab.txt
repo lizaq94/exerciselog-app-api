@@ -1,0 +1,1 @@
+30 3 * * 1 /home/deploy/exerciselog-prod/deploy/backup/backup-db.sh >> /home/deploy/backup.log 2>&1

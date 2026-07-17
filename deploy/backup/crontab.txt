@@ -1,1 +1,7 @@
+# Crontab backup for 'deploy' user on production VPS.
+# Restore after server rebuild: crontab deploy/backup/crontab.txt
+# (WARNING: overwrites entire user crontab, does not append)
+
 30 3 * * 1 /home/deploy/exerciselog-prod/deploy/backup/backup-db.sh >> /home/deploy/backup.log 2>&1
+
+0 4 * * 1 /home/deploy/exerciselog-prod/deploy/backup/backup-uploads.sh >> /home/deploy/backup.log 2>&1

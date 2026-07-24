@@ -24,8 +24,8 @@ jobs:
       NODE_ENV: test
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/postgres
-      JWT_ACCESS_TOKEN_SECRET: ${{ secrets.JWT_ACCESS_TOKEN_SECRET }}
-      JWT_REFRESH_TOKEN_SECRET: ${{ secrets.JWT_REFRESH_TOKEN_SECRET }}
+      JWT_ACCESS_TOKEN_SECRET:  test-jwt-access-secret
+      JWT_REFRESH_TOKEN_SECRET: test-jwt-refresh-secret
       MAIL_HOST: smtp.example.com
       SMTP_USERNAME: test-smtp-user
       SMTP_PASSWORD: test-smtp-password

@@ -1,0 +1,25 @@
+{
+  "high": true,
+  // fail on high and critical
+  "skip-dev": true,
+  // production dependencies only
+  "allowlist": [
+    // @nestjs-modules/mailer cluster — to be closed by migration to mailer 2.x + nodemailer 9.x (backlog)
+    "GHSA-268h-hp4c-crq3",
+    // nodemailer: CRLF injection in List-*
+    "GHSA-wqvq-jvpq-h66f",
+    // nodemailer: jsonTransport bypass
+    "GHSA-r7g4-qg5f-qqm2",
+    // nodemailer: TLS with OAuth2 (we don't use OAuth2)
+    "GHSA-p6gq-j5cr-w38f",
+    // nodemailer: raw option bypass (we don't use raw)
+    "GHSA-22p9-wv53-3rq4",
+    // linkify-it via mailparser<-preview-email
+    "GHSA-v245-v573-v5vm",
+    // linkify-it same as above
+    "GHSA-mh99-v99m-4gvg",
+    // brace-expansion via mjml/ejs (mailer adapters)
+    // @nestjs/swagger — waiting for it to upgrade its js-yaml
+    "GHSA-pm4m-ph32-ghv5"
+  ]
+}

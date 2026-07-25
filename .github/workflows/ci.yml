@@ -14,6 +14,7 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
+      - run: npx audit-ci --config ./audit-ci.jsonc
       - run: npm run lint:ci
       - run: npx prisma generate
       - run: npm run build

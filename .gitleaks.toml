@@ -1,0 +1,16 @@
+title = "ExerciseLog API - gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public demo token from jwt.io ({\"sub\":\"1234567890\",\"name\":\"John Doe\"}) used as a Swagger @ApiProperty example"
+regexes = [
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0\.''',
+]
+
+[[allowlists]]
+description = "Placeholder from the default NestJS starter README (commit 3f33acc, 2024-06) — coverage badge URL, not a token"
+regexes = [
+  '''^abc123def456$''',
+]

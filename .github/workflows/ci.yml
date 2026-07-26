@@ -71,7 +71,7 @@ jobs:
       - run: npx prisma migrate deploy
       - run: npm run test:e2e
   docker:
-    needs: [build-and-test, e2e]
+    needs: [secrets, build-and-test, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -93,9 +93,25 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          load: true
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: Scan image with Trivy
+        env:
+          IMAGE: ghcr.io/lizaq94/exerciselog-app-api:${{ steps.meta.outputs.version }}
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          ghcr.io/aquasecurity/trivy:0.72.0 image \
+          --scanners vuln --pkg-types os \
+          --severity HIGH,CRITICAL --ignore-unfixed \
+          --exit-code 1 \
+          "$IMAGE"
+
+      - name: Push image
+        env:
+          IMAGE: ghcr.io/lizaq94/exerciselog-app-api:${{ steps.meta.outputs.version }}
+        run: docker push "$IMAGE"
   deploy:
     needs: [docker]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

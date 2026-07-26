@@ -65,6 +65,8 @@ jobs:
               BLUE=$($COMPOSE ps -q app-prod)
               echo "Blue: $BLUE"
           
+              docker image prune -af --filter "until=168h" || echo "::warning::image prune failed"
+          
               $COMPOSE pull app-prod
           
               $COMPOSE run --rm migrate < /dev/null

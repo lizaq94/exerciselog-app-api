@@ -8,11 +8,21 @@ services:
     command: npx prisma migrate deploy
     env_file: .env.prod
     networks: [web]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   app:
     image: ghcr.io/lizaq94/exerciselog-app-api:${IMAGE_TAG}
     restart: unless-stopped
     env_file: .env.prod
     networks: [web]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       migrate:
         condition: service_completed_successfully

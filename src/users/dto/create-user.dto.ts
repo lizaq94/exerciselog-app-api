@@ -33,7 +33,7 @@ export class CreateUserDto {
     description:
       'Optional refresh token for the user, used to maintain sessions',
     example:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SGslTjOS_vw',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ8.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SGslTjOS_vw',
     required: false,
   })
   @IsString()

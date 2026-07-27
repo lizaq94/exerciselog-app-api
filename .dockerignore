@@ -7,3 +7,5 @@ logs
 test
 .env.prod
 .env.production
+.github
+/docs

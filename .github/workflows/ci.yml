@@ -124,7 +124,7 @@ jobs:
 
     steps:
       - name: Tag version
-        run: echo "IMAGE_TAG=main-${GITHUB_SHA::7}" >> $GITHUB_ENV
+        run: echo "IMAGE_TAG=main-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - name: Load SSH key
         uses: webfactory/ssh-agent@v0.10.0

@@ -1,6 +1,6 @@
 import { Injectable, RequestTimeoutException } from '@nestjs/common';
 import * as path from 'node:path';
-import { v4 as uuid4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '../../config/config.service';
 
@@ -50,6 +50,6 @@ export class StorageProvider {
     const extension = path.extname(file.originalname);
     const timestamp = Date.now().toString();
 
-    return `${sanitized}-${timestamp}-${uuid4()}${extension}`;
+    return `${sanitized}-${timestamp}-${randomUUID()}${extension}`;
   }
 }

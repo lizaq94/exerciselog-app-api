@@ -3,13 +3,16 @@ import { RequestTimeoutException } from '@nestjs/common';
 import { StorageProvider } from './storage.provider';
 import { ConfigService } from '../../config/config.service';
 import { S3Client } from '@aws-sdk/client-s3';
-import { v4 as uuid4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 
 jest.mock('@aws-sdk/client-s3', () => ({
   S3Client: jest.fn(),
   PutObjectCommand: jest.fn((input) => ({ input })),
 }));
-jest.mock('uuid');
+jest.mock('node:crypto', () => ({
+  ...jest.requireActual('node:crypto'),
+  randomUUID: jest.fn(),
+}));
 
 describe('StorageProvider', () => {
   let provider: StorageProvider;
@@ -65,7 +68,7 @@ describe('StorageProvider', () => {
       stream: null as any,
     };
 
-    (uuid4 as jest.Mock).mockReturnValue('mocked-uuid-1234');
+    (randomUUID as jest.Mock).mockReturnValue('mocked-uuid-1234');
     jest.spyOn(Date, 'now').mockReturnValue(1640995200000);
   });
 

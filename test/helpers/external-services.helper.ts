@@ -1,4 +1,4 @@
-import { v4 as uuid4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { RAW_AI_RESPONSES } from '../../src/ai/services/__mocks__/ai-responses.mock';
 
 /**
@@ -23,7 +23,7 @@ export interface ExternalServiceMocks {
 export const createFakeStorageProvider = () => ({
   fileUpload: jest.fn(async (file: Express.Multer.File) => {
     const extension = file?.originalname?.split('.').pop() ?? 'bin';
-    return `test-image-${uuid4()}.${extension}`;
+    return `test-image-${randomUUID()}.${extension}`;
   }),
 });
 

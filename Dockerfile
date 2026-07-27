@@ -14,10 +14,9 @@ WORKDIR /app
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
-RUN npm ci --omit=dev
-COPY --from=builder  /app/node_modules/.prisma/client ./node_modules/.prisma/client
-COPY --from=builder  /app/node_modules/@prisma/client ./node_modules/@prisma/client
+RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/prisma ./prisma
+RUN ./node_modules/.bin/prisma generate
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000

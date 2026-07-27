@@ -144,7 +144,10 @@ jobs:
             git pull --ff-only
             cp deploy/staging/docker-compose.yml docker-compose.prod.yml
           
-            docker image prune -af --filter "until=168h" || echo "::warning::image prune failed"
+            docker images --filter=reference='ghcr.io/lizaq94/exerciselog-app-api:main-*' \
+              --format '{{.ID}} {{.CreatedAt}}' \
+              | sort -k2 -r | tail -n +4 | awk '{print $1}' \
+              | xargs -r docker image rm || true
           
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d

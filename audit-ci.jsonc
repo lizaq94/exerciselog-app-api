@@ -2,14 +2,15 @@
   "high": true, // fail on high and critical
   "skip-dev": true, // production dependencies only
   "allowlist": [
-    // --- @nestjs-modules/mailer cluster — to be closed by migration to mailer 2.x + nodemailer 9.x (backlog) ---
+    // --- nodemailer — to be closed by bumping our direct dep from 8.x to 9.0.1+ (semver major).
+    //     Note: 9.0.0 is still in the vulnerable range; latest is 9.0.3. ---
     "GHSA-p6gq-j5cr-w38f", // nodemailer: raw option bypasses disableFileAccess/disableUrlAccess (we don't use raw)
-    "GHSA-22p9-wv53-3rq4", // linkify-it: quadratic complexity in LinkifyIt#match (via mailparser <- preview-email)
-    "GHSA-v245-v573-v5vm", // linkify-it: quadratic DoS in the mailto: validator (via mailparser <- preview-email)
 
-    // --- ejs / mjml (mail template adapters) — to be closed by bumping ejs to 6.x (semver major) ---
+    // --- brace-expansion — only PARTIALLY closable by us. Two production paths reach it:
+    //       ejs -> jake -> filelist -> minimatch        (closed by bumping ejs to 6.x, which has zero deps)
+    //       mailer -> mjml -> js-beautify -> minimatch  (upstream; nothing we can do but wait)
+    //     So this entry stays even after the ejs bump. ---
     "GHSA-mh99-v99m-4gvg", // brace-expansion: DoS via unbounded expansion (via mjml/ejs)
-
     // --- @nestjs/swagger — waiting for it to bump its nested js-yaml ---
     "GHSA-pm4m-ph32-ghv5" // js-yaml: exponential parsing time in flow collections
   ]

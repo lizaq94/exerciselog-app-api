@@ -30,6 +30,7 @@ import * as Joi from 'joi';
         MAIL_HOST: Joi.string().required(),
         SMTP_USERNAME: Joi.string().required(),
         SMTP_PASSWORD: Joi.string().required(),
+        MAIL_FROM: Joi.string().default('no-reply@exerciselog.com'),
 
         // Object storage variables (S3-compatible: Cloudflare R2, MinIO, AWS S3, ...)
         S3_ENDPOINT: Joi.string().uri().required(),

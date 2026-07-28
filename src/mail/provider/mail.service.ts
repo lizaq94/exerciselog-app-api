@@ -7,7 +7,7 @@ export class MailService {
   constructor(private readonly mailService: MailerService) {}
 
   public async sendUserWelcome(user: UserEntity) {
-    await this.mailService.sendMail({
+    return this.mailService.sendMail({
       to: user.email,
       subject: 'Welcome to Exerciselog app!',
       template: './welcome',

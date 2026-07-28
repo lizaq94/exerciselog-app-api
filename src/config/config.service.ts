@@ -17,7 +17,7 @@ interface AuthConfig {
   jwtRefreshTokenExpiration: string;
 }
 
-interface MailConfig {
+export interface MailConfig {
   host: string;
   enabled: boolean;
   username: string;

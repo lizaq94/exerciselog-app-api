@@ -2,10 +2,6 @@
   "high": true, // fail on high and critical
   "skip-dev": true, // production dependencies only
   "allowlist": [
-    // --- nodemailer — to be closed by bumping our direct dep from 8.x to 9.0.1+ (semver major).
-    //     Note: 9.0.0 is still in the vulnerable range; latest is 9.0.3. ---
-    "GHSA-p6gq-j5cr-w38f", // nodemailer: raw option bypasses disableFileAccess/disableUrlAccess (we don't use raw)
-
     // --- brace-expansion — only PARTIALLY closable by us. Two production paths reach it:
     //       ejs -> jake -> filelist -> minimatch        (closed by bumping ejs to 6.x, which has zero deps)
     //       mailer -> mjml -> js-beautify -> minimatch  (upstream; nothing we can do but wait)

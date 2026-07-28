@@ -71,7 +71,7 @@ export class AuthService {
       expireRefreshToken,
     );
 
-    if (this.configService.getAppConfig().nodeEnv === 'production') {
+    if (this.configService.getMailConfig().enabled) {
       try {
         await this.mailService.sendUserWelcome(newUser);
       } catch (error) {

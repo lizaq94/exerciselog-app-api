@@ -19,6 +19,7 @@ interface AuthConfig {
 
 interface MailConfig {
   host: string;
+  enabled: boolean;
   username: string;
   password: string;
   from: string;
@@ -88,6 +89,7 @@ export class ConfigService {
   getMailConfig(): MailConfig {
     return {
       host: this.get<string>('MAIL_HOST', 'smtp.example.com'),
+      enabled: this.get<boolean>('MAIL_ENABLED', false),
       username: this.get<string>('SMTP_USERNAME', 'user@example.com'),
       password: this.get<string>('SMTP_PASSWORD', 'password'),
       from: this.get<string>('MAIL_FROM', 'no-reply@exerciselog.com'),

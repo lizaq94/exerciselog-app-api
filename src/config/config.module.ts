@@ -26,6 +26,7 @@ import * as Joi from 'joi';
         JWT_REFRESH_TOKEN_EXPIRATION_MS: Joi.string().default('604800000'),
 
         // Mail variables
+        MAIL_ENABLED: Joi.boolean().default(false),
         MAIL_HOST: Joi.string().required(),
         SMTP_USERNAME: Joi.string().required(),
         SMTP_PASSWORD: Joi.string().required(),

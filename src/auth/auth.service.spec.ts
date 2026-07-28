@@ -47,6 +47,14 @@ describe('AuthService', () => {
     corsOrigin: 'http://localhost:3000',
   };
 
+  const mockMailConfig = {
+    enabled: true,
+    host: '',
+    username: '',
+    from: '',
+    password: '',
+  };
+
   const mockLoggerServiceFactory = () => ({
     log: jest.fn(),
     error: jest.fn(),
@@ -69,6 +77,7 @@ describe('AuthService', () => {
     const mockConfigServiceFactory = () => ({
       getAuthConfig: jest.fn(),
       getAppConfig: jest.fn(),
+      getMailConfig: jest.fn(),
     });
 
     const mockHashingProviderFactory = () => ({
@@ -125,6 +134,7 @@ describe('AuthService', () => {
 
     mockConfigService.getAuthConfig.mockReturnValue(mockAuthConfig);
     mockConfigService.getAppConfig.mockReturnValue(mockAppConfig);
+    mockConfigService.getMailConfig.mockReturnValue(mockMailConfig);
   });
 
   afterEach(() => {
@@ -143,11 +153,6 @@ describe('AuthService', () => {
     };
 
     it('should create a new user, generate tokens, set cookies, and send a welcome email', async () => {
-      mockConfigService.getAppConfig.mockReturnValue({
-        ...mockAppConfig,
-        nodeEnv: 'production',
-      });
-
       const newUser = { ...mockUser, id: '2', email: createUserDto.email };
 
       mockUsersService.create.mockResolvedValue(newUser);
@@ -193,11 +198,6 @@ describe('AuthService', () => {
     });
 
     it('should throw RequestTimeoutException if MailService fails', async () => {
-      mockConfigService.getAppConfig.mockReturnValue({
-        ...mockAppConfig,
-        nodeEnv: 'production',
-      });
-
       const newUser = { ...mockUser, id: '2', email: createUserDto.email };
       const mailError = new Error('Mail service error');
 
@@ -215,6 +215,44 @@ describe('AuthService', () => {
       ).rejects.toThrow(new RequestTimeoutException(mailError));
 
       expect(mockMailService.sendUserWelcome).toHaveBeenCalledWith(newUser);
+    });
+
+    it('should not send a welcome email when mail is disabled', async () => {
+      const newUser = { ...mockUser, id: '2', email: createUserDto.email };
+
+      mockConfigService.getMailConfig.mockReturnValue({
+        ...mockMailConfig,
+        enabled: false,
+      });
+
+      mockUsersService.create.mockResolvedValue(newUser);
+      mockUsersService.update.mockResolvedValue(newUser);
+      mockJwtService.sign
+        .mockReturnValueOnce('access-token')
+        .mockReturnValueOnce('refresh-token');
+      mockHashingProvider.encrypt.mockResolvedValue('hashedRefreshToken');
+      mockMailService.sendUserWelcome.mockResolvedValue(undefined);
+
+      await service.signup(createUserDto, mockResponse as Response);
+
+      expect(mockUsersService.create).toHaveBeenCalledWith(createUserDto);
+      expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
+      expect(mockHashingProvider.encrypt).toHaveBeenCalledWith('refresh-token');
+      expect(mockUsersService.update).toHaveBeenCalledWith(newUser.id, {
+        refreshToken: 'hashedRefreshToken',
+      });
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'Authentication',
+        'access-token',
+        expect.any(Object),
+      );
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'Refresh',
+        'refresh-token',
+        expect.any(Object),
+      );
+
+      expect(mockMailService.sendUserWelcome).not.toHaveBeenCalled();
     });
   });
 

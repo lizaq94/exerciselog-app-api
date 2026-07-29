@@ -1,10 +1,6 @@
 import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  PrismaClientKnownRequestError,
-  PrismaClientValidationError,
-  PrismaClientUnknownRequestError,
-} from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 import { LoggerService } from '../../logger/logger.service';
@@ -87,7 +83,7 @@ describe('AllExceptionsFilter', () => {
     });
 
     it('should mask PrismaClientValidationError details and return generic message', async () => {
-      const prismaError = new PrismaClientValidationError(
+      const prismaError = new Prisma.PrismaClientValidationError(
         'Invalid `prisma.user.create()` invocation:\ncolumn "email" required',
         { clientVersion: '5.0.0' },
       );
@@ -121,7 +117,7 @@ describe('AllExceptionsFilter', () => {
     });
 
     it('should mask PrismaClientKnownRequestError details and return generic message', async () => {
-      const prismaError = new PrismaClientKnownRequestError(
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
         'Unique constraint failed on the fields: (`email`)',
         { code: 'P2002', clientVersion: '5.0.0' },
       );
@@ -153,7 +149,7 @@ describe('AllExceptionsFilter', () => {
     });
 
     it('should handle PrismaClientUnknownRequestError with status 500, set response, and log the error', async () => {
-      const prismaError = new PrismaClientUnknownRequestError(
+      const prismaError = new Prisma.PrismaClientUnknownRequestError(
         'Unknown database issue',
         { clientVersion: '5.0.0' },
       );

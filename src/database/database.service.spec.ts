@@ -1,12 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DatabaseService } from './database.service';
+import ConfigService from '../config/config.service';
 
 describe('DatabaseService', () => {
   let service: DatabaseService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DatabaseService],
+      providers: [
+        DatabaseService,
+        {
+          provide: ConfigService,
+          useValue: {
+            getAppConfig: () => ({
+              databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+            }),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<DatabaseService>(DatabaseService);

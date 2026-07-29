@@ -6,11 +6,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
-import {
-  PrismaClientKnownRequestError,
-  PrismaClientValidationError,
-  PrismaClientUnknownRequestError,
-} from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { LoggerService } from '../../logger/logger.service';
 
@@ -63,15 +59,15 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
         typeof httpResponse === 'string'
           ? httpResponse
           : JSON.stringify(httpResponse);
-    } else if (exception instanceof PrismaClientValidationError) {
+    } else if (exception instanceof Prisma.PrismaClientValidationError) {
       errorResponse.error.statusCode = 422;
       errorResponse.error.message = 'Validation error';
       internalMessage = exception.message.replace(/\n/g, '');
-    } else if (exception instanceof PrismaClientKnownRequestError) {
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       errorResponse.error.statusCode = 400;
       errorResponse.error.message = 'Database request error';
       internalMessage = `Database error [${exception.code}]: ${exception.message}`;
-    } else if (exception instanceof PrismaClientUnknownRequestError) {
+    } else if (exception instanceof Prisma.PrismaClientUnknownRequestError) {
       errorResponse.error.statusCode = 500;
       errorResponse.error.message = 'Unknown database error';
       internalMessage = exception.message;

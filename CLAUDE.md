@@ -19,13 +19,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### E2E tests (separate Jest config at `test/jest-e2e.json`, `*.e2e-spec.ts`, `maxWorkers: 1`)
 E2E uses a **separate database** configured via `.env.test` (loaded with `dotenv-cli`). Order matters:
 1. `npm run test:e2e:setup` — apply migrations to the test DB (`prisma migrate deploy`).
-2. `npm run test:e2e:reset` — drop & re-create the test DB when schema or seed data drift.
-3. `npm run test:e2e:seed` — seed via `prisma db seed`.
-4. `npm run test:e2e` — run the suite.
+2. `npm run test:e2e:reset` — drop & re-create the test DB when the schema drifts.
+3. `npm run test:e2e` — run the suite.
+
+There is **no seed script**; specs build their own fixtures via `test/helpers/resource-creators.helper.ts`. Note that the app itself resolves env through `ConfigModule`'s `envFilePath: ['.env.<NODE_ENV>', '.env']`, so a missing `.env.test` silently falls back to `.env` — the e2e cleaner then wipes the development database.
 - Single e2e file: `npm run test:e2e -- test/workouts/workouts.e2e-spec.ts`.
 
 ### Prisma
 - After editing `prisma/schema.prisma`: `npx prisma migrate dev --name <change>` (dev DB) and re-run the e2e setup commands above for the test DB. The Prisma client is regenerated automatically by `migrate dev`.
+- Prisma 7 is configured through `prisma.config.ts`, not the schema: the datasource block carries no `url`, and the CLI reads **`DIRECT_URL`** (the config file loads `.env.<NODE_ENV>` then `.env` itself). Any container or CI job that runs `prisma migrate deploy` must therefore set `DIRECT_URL`, not just `DATABASE_URL`.
 
 ## Architecture
 
@@ -33,12 +35,12 @@ E2E uses a **separate database** configured via `.env.test` (loaded with `dotenv
 `User` 1—N `Workout` 1—N `Exercise` 1—N `Set`. `Exercise` 1—1 `Upload` (S3 image). All child relations cascade on delete. IDs are UUIDs; `order` fields drive sort order on exercises and sets.
 
 ### Module wiring
-`AppModule` composes feature modules: `Auth`, `Users`, `Workouts`, `Exercises`, `Sets`, `Uploads`, `Ai`, plus cross-cutting `Casl`, `Database`, `Logger`, `Pagination`, `Config`, `Mail`. `ThrottlerGuard` is registered globally as `APP_GUARD` (100 req/60s). `DatabaseService` extends `PrismaClient` and is a singleton injected wherever DB access is needed — do **not** instantiate `PrismaClient` directly.
+`AppModule` composes feature modules: `Auth`, `Users`, `Workouts`, `Exercises`, `Sets`, `Uploads`, `Ai`, `Health`, plus cross-cutting `Casl`, `Database`, `Logger`, `Pagination`, `Config`, `Mail`. `ThrottlerGuard` is registered globally as `APP_GUARD` (100 req/60s) and `RequestIdMiddleware` is applied to all routes. `DatabaseService` extends `PrismaClient` and is a singleton injected wherever DB access is needed — do **not** instantiate `PrismaClient` directly; it is constructed with the `PrismaPg` driver adapter over `DATABASE_URL`.
 
 `CaslModule` uses `forwardRef` for `Workouts`/`Exercises`/`Sets`/`Users` because `OwnershipGuard` injects those services to fetch the resource being checked, and they in turn reference CASL types. Keep new resource modules behind `forwardRef` if they participate in ownership checks.
 
 ### Bootstrap pipeline (`src/app.create.ts`)
-`createApp(app)` is shared by `main.ts` and the e2e setup helper, so both prod and tests get identical middleware. It configures: Swagger at `/api`, `cookie-parser`, a strict global `ValidationPipe` (`whitelist: true, forbidNonWhitelisted: true, transform: true, enableImplicitConversion: true`), the global `AllExceptionsFilter`, and the global `DataResponseInterceptor`. New DTO fields without `class-validator` decorators are silently stripped — always decorate.
+`createApp(app)` is shared by `main.ts` and the e2e setup helper, so both prod and tests get identical middleware. It configures: `trust proxy`, Swagger at `/api` (skipped when `NODE_ENV=production`), CORS (`credentials: true`; locked to `CORS_ORIGIN` in production, reflect-any elsewhere), `cookie-parser`, a strict global `ValidationPipe` (`whitelist: true, forbidNonWhitelisted: true, transform: true, enableImplicitConversion: true`), the global `AllExceptionsFilter`, and the global `DataResponseInterceptor`. New DTO fields without `class-validator` decorators are silently stripped — always decorate.
 
 ### Response & error envelope
 - All successful responses are wrapped by `DataResponseInterceptor` as `{ apiVersion: process.env.APP_VERSION, data: <controller return> }`. Tests and clients should expect this shape; never return the envelope manually.
@@ -49,7 +51,7 @@ E2E uses a **separate database** configured via `.env.test` (loaded with `dotenv
 - `JwtStrategy` reads `request.cookies.Authentication` → guarded by `JwtAuthGuard`.
 - `JwtRefreshStrategy` (`'jwt-refresh'`) reads `request.cookies.Refresh` and verifies via `AuthService.verifyUserRefreshToken` → guarded by `JwtRefreshAuthGuard` on `/auth/refresh` and `/auth/logout`.
 - `LocalStrategy` validates email+password on `/auth/login`.
-- `cookie.secure` is only true in production. Welcome emails are sent only in production (failures throw `RequestTimeoutException`).
+- `cookie.secure` is only true in production. Welcome emails are sent only when `MAIL_ENABLED=true` (failures throw `RequestTimeoutException`).
 
 ### Authorization (CASL + `OwnershipGuard`)
 Authorization is two-step:
@@ -72,7 +74,7 @@ List endpoints return `PaginatedResult<T> = {data, meta, links}` (see `WorkoutsS
 `AiController POST /ai/generate-workout` is a three-stage pipeline in `AiService.generateWorkout`: `OpenRouterProvider` (HTTP call to OpenRouter) → `AiResponseParserService` (validates raw response) → `AiResponseTransformerService` (maps to `CreateWorkoutBulkDto[]`). The endpoint **does not persist** plans; clients then POST a chosen plan to `/users/:id/workouts/bulk`. Errors are re-thrown with the original goal interpolated for log correlation. Required env: `OPEN_ROUTER_API_KEY`, `OPEN_ROUTER_API_URL`.
 
 ### Logger
-`LoggerService` extends Nest's `ConsoleLogger` and **also** appends entries to `logs/log-DD-MM-YYYY.log` (Europe/Warsaw timezone). Controllers/services inject it and pass `ClassName.name` as context. `LOG_LEVEL` env (`error|warn|log|debug|verbose`) controls console output; file output is unconditional.
+`LoggerService` extends Nest's `ConsoleLogger` and switches behaviour on `NODE_ENV`: in production it writes one JSON line per entry (`timestamp`, `level`, `context`, `message`, `service`, `pid`, `hostname`, optional `stack`) to `stdout` — or `stderr` for errors — so the container log driver collects it; in every other env it delegates to `ConsoleLogger`. Controllers/services inject it and pass `ClassName.name` as context. There is no file output and no `LOG_LEVEL` handling.
 
 ### Configuration
 Wrap all env access through the custom `ConfigService` in `src/config/` (not `@nestjs/config` directly). It exposes typed getters: `getAppConfig()`, `getAuthConfig()`, `getMailConfig()`, `getStorageConfig()`. Add new typed groups here rather than reading `process.env` ad hoc.

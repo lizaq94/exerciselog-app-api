@@ -4,13 +4,13 @@ services:
     container_name: exerciselog-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: exerciselog
-      POSTGRES_PASSWORD: exerciselog
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: exerciselog
     ports:
       - '5432:5432'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U exerciselog -d exerciselog']
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d exerciselog']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -19,7 +19,8 @@ services:
     image: exerciselog-api:local
     command: npx prisma migrate deploy
     environment:
-      DATABASE_URL: 'postgresql://exerciselog:exerciselog@db:5432/exerciselog?schema=public'
+      DATABASE_URL: 'postgresql://postgres:postgres@db:5432/exerciselog?schema=public'
+      DIRECT_URL: 'postgresql://postgres:postgres@db:5432/exerciselog?schema=public'
     depends_on:
       db:
         condition: service_healthy
@@ -30,7 +31,7 @@ services:
       - '3000:3000'
     environment:
       NODE_ENV: development
-      DATABASE_URL: 'postgresql://exerciselog:exerciselog@db:5432/exerciselog?schema=public'
+      DATABASE_URL: 'postgresql://postgres:postgres@db:5432/exerciselog?schema=public'
       JWT_ACCESS_TOKEN_SECRET: accessTokenSecret
       JWT_REFRESH_TOKEN_SECRET: refreshTokenSecret
       MAIL_HOST: smtp.example.com

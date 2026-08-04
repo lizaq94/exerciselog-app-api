@@ -16,6 +16,7 @@ import { testForbiddenException } from '../common/test/authorization-test.util';
 import { GetWorkoutsDto } from '../workouts/dto/get-workouts.dto';
 import { CreateWorkoutDto } from '../workouts/dto/create-workout.dto';
 import { WorkoutEntity } from '../workouts/entities/workout.entity';
+import { UserEntity } from './entities/user.entity';
 
 const mockUserId = 'user-id';
 
@@ -81,6 +82,31 @@ describe('UsersController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('getMe', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should return only the identity fields, without credentials', () => {
+      const authenticatedUser: UserEntity = {
+        ...mockUser,
+        password: 'hashedPassword',
+        refreshToken: 'hashedRefreshToken',
+        workouts: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const result = controller.getMe(authenticatedUser);
+
+      expect(result).toEqual({
+        id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+      });
+    });
   });
 
   describe('create', () => {

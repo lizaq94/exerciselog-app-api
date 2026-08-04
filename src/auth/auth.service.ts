@@ -8,6 +8,10 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { UserEntity } from '../users/entities/user.entity';
+import {
+  UserIdentityDto,
+  toUserIdentity,
+} from '../users/dto/user-identity.dto';
 import { Response } from 'express';
 import { MailService } from '../mail/provider/mail.service';
 import { ConfigService } from '../config/config.service';
@@ -27,7 +31,7 @@ export class AuthService {
     private readonly logger: LoggerService,
   ) {}
 
-  async login(user: UserEntity, response: Response) {
+  async login(user: UserEntity, response: Response): Promise<UserIdentityDto> {
     const { accessToken, refreshToken, expireAccessToken, expireRefreshToken } =
       this.generateTokens(user.id);
 
@@ -40,15 +44,14 @@ export class AuthService {
       expireRefreshToken,
     );
 
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-    };
+    return toUserIdentity(user);
   }
 
-  async signup(userData: CreateUserDto, response: Response) {
-    let newUser;
+  async signup(
+    userData: CreateUserDto,
+    response: Response,
+  ): Promise<UserIdentityDto> {
+    let newUser: UserEntity;
 
     try {
       newUser = await this.usersService.create(userData);
@@ -79,11 +82,7 @@ export class AuthService {
       }
     }
 
-    return {
-      id: newUser.id,
-      username: newUser.username,
-      email: newUser.email,
-    };
+    return toUserIdentity(newUser);
   }
 
   async logout(user: UserEntity, response: Response) {

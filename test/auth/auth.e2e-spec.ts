@@ -51,8 +51,11 @@ describe('AuthController (e2e)', () => {
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data).toHaveProperty('username', userData.username);
       expect(response.body.data).toHaveProperty('email', userData.email);
-      expect(response.body.data).not.toHaveProperty('password');
-      expect(response.body.data).not.toHaveProperty('refreshToken');
+      expect(Object.keys(response.body.data).sort()).toEqual([
+        'email',
+        'id',
+        'username',
+      ]);
 
       expect(response.headers['set-cookie']).toBeDefined();
       expect(hasCookie(response, 'Authentication')).toBe(true);
@@ -114,8 +117,11 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data).toHaveProperty('email', userData.email);
-      expect(response.body.data).not.toHaveProperty('password');
-      expect(response.body.data).not.toHaveProperty('refreshToken');
+      expect(Object.keys(response.body.data).sort()).toEqual([
+        'email',
+        'id',
+        'username',
+      ]);
 
       expect(response.headers['set-cookie']).toBeDefined();
       expect(hasCookie(response, 'Authentication')).toBe(true);
@@ -155,8 +161,11 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data).toHaveProperty('email', user.email);
-      expect(response.body.data).not.toHaveProperty('password');
-      expect(response.body.data).not.toHaveProperty('refreshToken');
+      expect(Object.keys(response.body.data).sort()).toEqual([
+        'email',
+        'id',
+        'username',
+      ]);
 
       expect(response.headers['set-cookie']).toBeDefined();
       expect(hasCookie(response, 'Authentication')).toBe(true);
@@ -212,8 +221,11 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data).toHaveProperty('email', user.email);
-      expect(response.body.data).not.toHaveProperty('password');
-      expect(response.body.data).not.toHaveProperty('refreshToken');
+      expect(Object.keys(response.body.data).sort()).toEqual([
+        'email',
+        'id',
+        'username',
+      ]);
     });
 
     it('should throw UnauthorizedException when using invalid access token', async () => {

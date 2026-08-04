@@ -254,6 +254,29 @@ describe('AuthService', () => {
 
       expect(mockMailService.sendUserWelcome).not.toHaveBeenCalled();
     });
+
+    it('should return only the identity fields, without credentials', async () => {
+      const newUser = { ...mockUser, id: '2', email: createUserDto.email };
+
+      mockUsersService.create.mockResolvedValue(newUser);
+      mockUsersService.update.mockResolvedValue(newUser);
+      mockJwtService.sign
+        .mockReturnValueOnce('access-token')
+        .mockReturnValueOnce('refresh-token');
+      mockHashingProvider.encrypt.mockResolvedValue('hashedRefreshToken');
+      mockMailService.sendUserWelcome.mockResolvedValue(undefined);
+
+      const result = await service.signup(
+        createUserDto,
+        mockResponse as Response,
+      );
+
+      expect(result).toEqual({
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+      });
+    });
   });
 
   describe('login', () => {
@@ -295,6 +318,22 @@ describe('AuthService', () => {
         'refresh-token',
         expect.any(Object),
       );
+    });
+
+    it('should return only the identity fields, without credentials', async () => {
+      mockJwtService.sign
+        .mockReturnValueOnce('access-token')
+        .mockReturnValueOnce('refresh-token');
+      mockHashingProvider.encrypt.mockResolvedValue('hashedRefreshToken');
+      mockUsersService.update.mockResolvedValue(mockUser);
+
+      const result = await service.login(mockUser, mockResponse as Response);
+
+      expect(result).toEqual({
+        id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+      });
     });
   });
 

@@ -2,12 +2,10 @@
   "high": true, // fail on high and critical
   "skip-dev": true, // production dependencies only
   "allowlist": [
-    // --- brace-expansion — not closable by us. Both remaining paths are inside
-    //     @nestjs-modules/mailer (glob@13, mjml -> js-beautify); stays until it bumps them.
-    //     The third path went away on 2026-07-29 when `ejs` was REMOVED from dependencies
-    //     (it was dead — EjsAdapter uses the ejs@5 mailer ships). Don't re-add it. ---
-    "GHSA-mh99-v99m-4gvg", // brace-expansion: DoS via unbounded expansion (via mailer's glob + mjml)
-    // --- @nestjs/swagger — waiting for it to bump its nested js-yaml ---
+    // --- @nestjs/swagger — waiting for it to bump its nested js-yaml.
+    //     It pins js-yaml to an EXACT 5.2.1, so closing this needs an override
+    //     that deliberately breaks that pin (`"js-yaml@5": "^5.2.3"`). Not worth
+    //     it until swagger ships the bump itself. ---
     "GHSA-pm4m-ph32-ghv5" // js-yaml: exponential parsing time in flow collections
   ]
 }

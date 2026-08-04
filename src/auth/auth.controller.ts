@@ -6,10 +6,18 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiNoContentResponse,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Response } from 'express';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UserEntity } from '../users/entities/user.entity';
+import { UserIdentityResponseDto } from '../users/dto/user-identity-response.dto';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
 import { SignInDto } from './dto/sign-in.dto';
@@ -42,9 +50,11 @@ export class AuthController {
     },
   })
   @ApiResponse({
+    status: 200,
     description: 'User successfully logged in and token returned.',
-    type: UserEntity,
+    type: UserIdentityResponseDto,
   })
+  @ApiUnauthorizedResponse({ description: 'Credentials are not valid.' })
   async login(
     @CurrentUser() user: UserEntity,
     @Res({ passthrough: true }) response: Response,
@@ -71,8 +81,9 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'User successfully registered.',
-    type: UserEntity,
+    type: UserIdentityResponseDto,
   })
+  @ApiUnauthorizedResponse({ description: 'User already exists.' })
   async signUp(
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) response: Response,
@@ -86,9 +97,11 @@ export class AuthController {
   @UseGuards(JwtRefreshAuthGuard)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({
+    status: 200,
     description: 'Access token successfully refreshed.',
-    type: UserEntity,
+    type: UserIdentityResponseDto,
   })
+  @ApiUnauthorizedResponse({ description: 'Refresh token is not valid.' })
   async refreshToken(
     @CurrentUser() user: UserEntity,
     @Res({ passthrough: true }) response: Response,
@@ -103,9 +116,10 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtRefreshAuthGuard)
   @ApiOperation({ summary: 'User logout' })
-  @ApiResponse({
+  @ApiNoContentResponse({
     description: 'User successfully logged out.',
   })
+  @ApiUnauthorizedResponse({ description: 'Refresh token is not valid.' })
   @HttpCode(204)
   async logout(
     @CurrentUser() user: UserEntity,

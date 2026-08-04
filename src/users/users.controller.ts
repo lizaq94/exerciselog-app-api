@@ -34,6 +34,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 import { Request as Req } from 'express';
 import { UserResponseDto } from './dto/user-response.dto';
+import { UserIdentityDto, toUserIdentity } from './dto/user-identity.dto';
+import { UserIdentityResponseDto } from './dto/user-identity-response.dto';
 import { WorkoutResponseDto } from '../workouts/dto/workout-response.dto';
 import { WorkoutsResponseDto } from '../workouts/dto/workouts-response.dto';
 import { OwnershipGuard } from '../casl/guards/ownership.guard';
@@ -52,20 +54,15 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current authenticated user' })
   @ApiOkResponse({
-    type: UserResponseDto,
+    type: UserIdentityResponseDto,
     description: 'Returns the current authenticated user information',
   })
-  @UseInterceptors(ClassSerializerInterceptor)
-  getMe(@CurrentUser() user: UserEntity) {
+  getMe(@CurrentUser() user: UserEntity): UserIdentityDto {
     this.logger.log(
       `Fetching current user info: ${user.id}`,
       UsersController.name,
     );
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-    };
+    return toUserIdentity(user);
   }
 
   @Post()

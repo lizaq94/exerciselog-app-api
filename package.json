@@ -94,7 +94,10 @@
   },
   "overrides": {
     "linkify-it": "^5.0.2",
-    "nodemailer": "$nodemailer"
+    "nodemailer": "$nodemailer",
+    "fast-uri": "^3.1.5",
+    "brace-expansion@2": "^2.1.4",
+    "brace-expansion@5": "^5.0.9"
   },
   "jest": {
     "moduleFileExtensions": [

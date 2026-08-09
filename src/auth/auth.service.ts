@@ -17,11 +17,10 @@ import { MailService } from '../mail/provider/mail.service';
 import { ConfigService } from '../config/config.service';
 import { HashingProvider } from '../common/hashing/hashing.provider';
 import { LoggerService } from '../logger/logger.service';
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from './auth.constants';
 
 @Injectable()
 export class AuthService {
-  private ACCESS_TOKEN_COOKIE = 'Authentication';
-  private REFRESH_TOKEN_COOKIE = 'Refresh';
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -137,14 +136,14 @@ export class AuthService {
     const isProduction =
       this.configService.getAppConfig().nodeEnv === 'production';
 
-    response.cookie(this.ACCESS_TOKEN_COOKIE, accessToken, {
+    response.cookie(ACCESS_TOKEN_COOKIE, accessToken, {
       sameSite: 'lax',
       httpOnly: true,
       secure: isProduction,
       expires: expireAccessToken,
     });
 
-    response.cookie(this.REFRESH_TOKEN_COOKIE, refreshToken, {
+    response.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
       sameSite: 'lax',
       httpOnly: true,
       secure: isProduction,
@@ -153,8 +152,8 @@ export class AuthService {
   }
 
   private clearCookies(response: Response) {
-    response.clearCookie(this.REFRESH_TOKEN_COOKIE);
-    response.clearCookie(this.ACCESS_TOKEN_COOKIE);
+    response.clearCookie(REFRESH_TOKEN_COOKIE);
+    response.clearCookie(ACCESS_TOKEN_COOKIE);
   }
 
   async validateUser(email: string, password: string) {

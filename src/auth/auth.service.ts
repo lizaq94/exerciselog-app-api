@@ -50,16 +50,7 @@ export class AuthService {
     userData: CreateUserDto,
     response: Response,
   ): Promise<UserIdentityDto> {
-    let newUser: UserEntity;
-
-    try {
-      newUser = await this.usersService.create(userData);
-    } catch (error) {
-      if (error.message?.includes('is already taken')) {
-        throw new UnauthorizedException('User already exists.');
-      }
-      throw error;
-    }
+    const newUser = await this.usersService.create(userData);
 
     const { accessToken, refreshToken, expireAccessToken, expireRefreshToken } =
       this.generateTokens(newUser.id);

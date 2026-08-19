@@ -62,15 +62,20 @@ describe('AuthController (e2e)', () => {
       expect(hasCookie(response, 'Refresh')).toBe(true);
     });
 
-    it('should throw UnauthorizedException when email is already taken', async () => {
+    it('should return 409 with the conflicting field when email is already taken', async () => {
       const userData = createTestUserData();
 
       await request(server).post('/auth/signup').send(userData).expect(201);
 
-      await request(server).post('/auth/signup').send(userData).expect(401);
+      const response = await request(server)
+        .post('/auth/signup')
+        .send(userData)
+        .expect(409);
+
+      expect(response.body.error.message).toBe('email is already taken');
     });
 
-    it('should throw UnauthorizedException when username is already taken', async () => {
+    it('should return 409 with the conflicting field when username is already taken', async () => {
       const userData1 = createTestUserData('1');
       const userData2 = {
         username: userData1.username, // Same username
@@ -80,7 +85,12 @@ describe('AuthController (e2e)', () => {
 
       await request(server).post('/auth/signup').send(userData1).expect(201);
 
-      await request(server).post('/auth/signup').send(userData2).expect(401);
+      const response = await request(server)
+        .post('/auth/signup')
+        .send(userData2)
+        .expect(409);
+
+      expect(response.body.error.message).toBe('username is already taken');
     });
 
     it('should throw validation error when provided with invalid data', async () => {

@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,6 +14,15 @@ import { Request } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { CreateWorkoutBulkDto } from '../workouts/dto/bulk';
 import { HashingProvider } from '../common/hashing/hashing.provider';
+import { Prisma } from '@prisma/client';
+
+type UniqueConstraintErrorMeta = {
+  driverAdapterError?: {
+    cause?: {
+      constraint?: { fields?: string[] };
+    };
+  };
+};
 
 @Injectable()
 export class UsersService {
@@ -63,9 +72,12 @@ export class UsersService {
 
       return plainToInstance(UserEntity, user);
     } catch (error) {
-      if (error.code === 'P2002') {
-        const field = error.meta?.target?.[0] || 'field';
-        throw new BadRequestException(`${field} is already taken`);
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const field = this.getConflictingField(error);
+        throw new ConflictException(`${field} is already taken`);
       }
       throw error;
     }
@@ -131,5 +143,13 @@ export class UsersService {
 
     if (!userExists)
       throw new NotFoundException(errorMessage || 'User not found');
+  }
+
+  private getConflictingField(
+    error: Prisma.PrismaClientKnownRequestError,
+  ): string {
+    const meta = error.meta as UniqueConstraintErrorMeta | undefined;
+
+    return meta?.driverAdapterError?.cause?.constraint?.fields?.[0] ?? 'field';
   }
 }

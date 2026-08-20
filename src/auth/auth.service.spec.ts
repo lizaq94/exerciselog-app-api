@@ -4,7 +4,11 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '../config/config.service';
 import { MailService } from '../mail/provider/mail.service';
-import { UnauthorizedException, RequestTimeoutException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  RequestTimeoutException,
+  ConflictException,
+} from '@nestjs/common';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
@@ -184,16 +188,17 @@ describe('AuthService', () => {
       expect(mockMailService.sendUserWelcome).toHaveBeenCalledWith(newUser);
     });
 
-    it('should throw UnauthorizedException if a user with the given email already exists', async () => {
-      mockUsersService.create.mockRejectedValue(
-        new Error('Email is already taken'),
-      );
+    it('should propagate the error from UsersService without starting a session', async () => {
+      const conflict = new ConflictException('email is already taken');
+      mockUsersService.create.mockRejectedValue(conflict);
 
       await expect(
         service.signup(createUserDto, mockResponse as Response),
-      ).rejects.toThrow(new UnauthorizedException('User already exists.'));
+      ).rejects.toThrow(conflict);
 
       expect(mockUsersService.create).toHaveBeenCalledWith(createUserDto);
+      expect(mockJwtService.sign).not.toHaveBeenCalled();
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
       expect(mockMailService.sendUserWelcome).not.toHaveBeenCalled();
     });
 

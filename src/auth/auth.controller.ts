@@ -13,6 +13,7 @@ import {
   ApiResponse,
   ApiNoContentResponse,
   ApiUnauthorizedResponse,
+  ApiConflictResponse,
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -83,7 +84,7 @@ export class AuthController {
     description: 'User successfully registered.',
     type: UserIdentityResponseDto,
   })
-  @ApiUnauthorizedResponse({ description: 'User already exists.' })
+  @ApiConflictResponse({ description: 'User already exists.' })
   async signUp(
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) response: Response,

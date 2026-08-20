@@ -2,10 +2,33 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { DatabaseService } from '../database/database.service';
 import { WorkoutsService } from '../workouts/workouts.service';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { HashingProvider } from '../common/hashing/hashing.provider';
+import { Prisma } from '@prisma/client';
+
+const uniqueConstraintError = (fields?: string[]) =>
+  new Prisma.PrismaClientKnownRequestError(
+    `Unique constraint failed on the ${
+      fields
+        ? `fields: (${fields.map((f) => `\`${f}\``).join(', ')})`
+        : '(not available)'
+    }`,
+    {
+      code: 'P2002',
+      clientVersion: Prisma.prismaVersion.client,
+      meta: {
+        modelName: 'User',
+        driverAdapterError: {
+          cause: {
+            kind: 'UniqueConstraintViolation',
+            constraint: fields ? { fields } : undefined,
+          },
+        },
+      },
+    },
+  );
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -244,6 +267,39 @@ describe('UsersService', () => {
           password: mockHashedPassword,
         },
       });
+    });
+
+    it('should throw ConflictException when the email is already taken', async () => {
+      mockHashingProvider.encrypt.mockResolvedValue(mockHashedPassword);
+      mockDatabaseService.user.create.mockRejectedValue(
+        uniqueConstraintError(['email']),
+      );
+
+      await expect(service.create(mockCreateUserDto)).rejects.toThrow(
+        new ConflictException('email is already taken'),
+      );
+    });
+
+    it('should throw ConflictException when the username is already taken', async () => {
+      mockHashingProvider.encrypt.mockResolvedValue(mockHashedPassword);
+      mockDatabaseService.user.create.mockRejectedValue(
+        uniqueConstraintError(['username']),
+      );
+
+      await expect(service.create(mockCreateUserDto)).rejects.toThrow(
+        new ConflictException('username is already taken'),
+      );
+    });
+
+    it('should fall back to a generic field name when P2002 carries no constraint fields', async () => {
+      mockHashingProvider.encrypt.mockResolvedValue(mockHashedPassword);
+      mockDatabaseService.user.create.mockRejectedValue(
+        uniqueConstraintError(),
+      );
+
+      await expect(service.create(mockCreateUserDto)).rejects.toThrow(
+        new ConflictException('field is already taken'),
+      );
     });
   });
   describe('update', () => {

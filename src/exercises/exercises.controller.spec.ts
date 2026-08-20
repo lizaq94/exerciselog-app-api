@@ -117,7 +117,7 @@ describe('ExerciseController', () => {
         new NotFoundException('Exercise not found'),
       );
 
-      await expect(controller.findOne(mockExerciseId)).rejects.toThrowError(
+      await expect(controller.findOne(mockExerciseId)).rejects.toThrow(
         new NotFoundException('Exercise not found'),
       );
       expect(mockExercisesService.findOne).toHaveBeenCalledWith(mockExerciseId);
@@ -167,7 +167,7 @@ describe('ExerciseController', () => {
 
       await expect(
         controller.update(mockExerciseId, mockUpdateDto),
-      ).rejects.toThrowError(new NotFoundException('Exercise not found'));
+      ).rejects.toThrow(new NotFoundException('Exercise not found'));
     });
 
     it('should log information about updating the exercise', async () => {

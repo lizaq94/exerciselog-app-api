@@ -84,7 +84,7 @@ describe('SetsController', () => {
         new NotFoundException('Set not found'),
       );
 
-      await expect(controller.findOne(wrongId)).rejects.toThrowError(
+      await expect(controller.findOne(wrongId)).rejects.toThrow(
         new NotFoundException('Set not found'),
       );
       expect(mockSetsService.findOne).toHaveBeenCalledWith(wrongId);

@@ -83,16 +83,23 @@ export class AuthService {
   private generateTokens(userId: string) {
     const authConfig = this.configService.getAuthConfig();
 
+    const accessTokenExpirationMs = parseInt(
+      authConfig.jwtAccessTokenExpiration,
+      10,
+    );
+    const refreshTokenExpirationMs = parseInt(
+      authConfig.jwtRefreshTokenExpiration,
+      10,
+    );
+
     const expireAccessToken = new Date();
     expireAccessToken.setTime(
-      expireAccessToken.getTime() +
-        parseInt(authConfig.jwtAccessTokenExpiration),
+      expireAccessToken.getTime() + accessTokenExpirationMs,
     );
 
     const expireRefreshToken = new Date();
     expireRefreshToken.setTime(
-      expireRefreshToken.getTime() +
-        parseInt(authConfig.jwtRefreshTokenExpiration),
+      expireRefreshToken.getTime() + refreshTokenExpirationMs,
     );
 
     const tokenPayload: TokenPayload = {
@@ -101,12 +108,12 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(tokenPayload, {
       secret: authConfig.jwtAccessTokenSecret,
-      expiresIn: `${authConfig.jwtAccessTokenExpiration}ms`,
+      expiresIn: `${accessTokenExpirationMs}ms`,
     });
 
     const refreshToken = this.jwtService.sign(tokenPayload, {
       secret: authConfig.jwtRefreshTokenSecret,
-      expiresIn: `${authConfig.jwtRefreshTokenExpiration}ms`,
+      expiresIn: `${refreshTokenExpirationMs}ms`,
     });
 
     return { expireAccessToken, expireRefreshToken, accessToken, refreshToken };

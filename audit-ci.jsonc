@@ -1,11 +1,4 @@
 {
   "high": true, // fail on high and critical
-  "skip-dev": true, // production dependencies only
-  "allowlist": [
-    // --- @nestjs/swagger — waiting for it to bump its nested js-yaml.
-    //     It pins js-yaml to an EXACT 5.2.1, so closing this needs an override
-    //     that deliberately breaks that pin (`"js-yaml@5": "^5.2.3"`). Not worth
-    //     it until swagger ships the bump itself. ---
-    "GHSA-pm4m-ph32-ghv5" // js-yaml: exponential parsing time in flow collections
-  ]
+  "skip-dev": true // production dependencies only
 }

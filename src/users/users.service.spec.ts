@@ -30,6 +30,25 @@ const uniqueConstraintError = (fields?: string[]) =>
     },
   );
 
+const uniqueIndexConstraintError = (index: string) =>
+  new Prisma.PrismaClientKnownRequestError(
+    `Unique constraint failed on the constraint: \`${index}\``,
+    {
+      code: 'P2002',
+      clientVersion: Prisma.prismaVersion.client,
+      meta: {
+        modelName: 'User',
+        table: 'User',
+        driverAdapterError: {
+          cause: {
+            kind: 'UniqueConstraintViolation',
+            constraint: { index },
+          },
+        },
+      },
+    },
+  );
+
 describe('UsersService', () => {
   let service: UsersService;
 
@@ -288,6 +307,34 @@ describe('UsersService', () => {
 
       await expect(service.create(mockCreateUserDto)).rejects.toThrow(
         new ConflictException('username is already taken'),
+      );
+    });
+
+    it.each([
+      ['User_email_key', 'email'],
+      ['User_username_key', 'username'],
+    ])(
+      'should derive the field from index name %s when P2002 carries no fields',
+      async (index, field) => {
+        mockHashingProvider.encrypt.mockResolvedValue(mockHashedPassword);
+        mockDatabaseService.user.create.mockRejectedValue(
+          uniqueIndexConstraintError(index),
+        );
+
+        await expect(service.create(mockCreateUserDto)).rejects.toThrow(
+          new ConflictException(`${field} is already taken`),
+        );
+      },
+    );
+
+    it('should fall back to a generic field name when the index name has an unknown format', async () => {
+      mockHashingProvider.encrypt.mockResolvedValue(mockHashedPassword);
+      mockDatabaseService.user.create.mockRejectedValue(
+        uniqueIndexConstraintError('custom_unique_idx'),
+      );
+
+      await expect(service.create(mockCreateUserDto)).rejects.toThrow(
+        new ConflictException('field is already taken'),
       );
     });
 

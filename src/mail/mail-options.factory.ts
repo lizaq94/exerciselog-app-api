@@ -1,5 +1,6 @@
 import { MailerOptions } from '@nestjs-modules/mailer';
 import { EjsAdapter } from '@nestjs-modules/mailer/adapters/ejs.adapter';
+import type { SendMailOptions } from 'nodemailer';
 import { join } from 'path';
 import { MailConfig } from '../config/config.service';
 
@@ -16,7 +17,7 @@ export function buildMailerOptions(mailConfig: MailConfig): MailerOptions {
     },
     defaults: {
       from: `Exercise log app <${mailConfig.from}>`,
-    },
+    } satisfies SendMailOptions as MailerOptions['defaults'],
     template: {
       dir: join(__dirname, 'templates'),
       adapter: new EjsAdapter(),

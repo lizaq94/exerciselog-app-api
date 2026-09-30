@@ -17,9 +17,11 @@ import { HashingProvider } from '../common/hashing/hashing.provider';
 import { Prisma } from '@prisma/client';
 
 type UniqueConstraintErrorMeta = {
+  modelName?: string;
+  table?: string;
   driverAdapterError?: {
     cause?: {
-      constraint?: { fields?: string[] };
+      constraint?: { fields?: string[]; index?: string };
     };
   };
 };
@@ -149,7 +151,24 @@ export class UsersService {
     error: Prisma.PrismaClientKnownRequestError,
   ): string {
     const meta = error.meta as UniqueConstraintErrorMeta | undefined;
+    const constraint = meta?.driverAdapterError?.cause?.constraint;
 
-    return meta?.driverAdapterError?.cause?.constraint?.fields?.[0] ?? 'field';
+    if (constraint?.fields?.[0]) return constraint.fields[0];
+
+    const table = meta?.table ?? meta?.modelName;
+    const prefix = `${table}_`;
+    const suffix = '_key';
+    const index = constraint?.index;
+
+    if (
+      table &&
+      index?.startsWith(prefix) &&
+      index.endsWith(suffix) &&
+      index.length > prefix.length + suffix.length
+    ) {
+      return index.slice(prefix.length, -suffix.length);
+    }
+
+    return 'field';
   }
 }
